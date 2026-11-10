@@ -4,7 +4,7 @@ import time
 import re
 from datetime import datetime, timedelta
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse as BaseJSONResponse, HTMLResponse
+from starlette.responses import JSONResponse as BaseJSONResponse, HTMLResponse, FileResponse
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 import httpx
@@ -721,9 +721,24 @@ async def parse_raw_info(request):
     return JSONResponse({"status": "success", "extracted": extracted})
 
 
+async def download_react_zip(request):
+    """Direct handler to serve the React source code ZIP file on Vercel."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    zip_path = os.path.join(base_dir, "static", "client-crm-react.zip")
+    if not os.path.exists(zip_path):
+        zip_path = os.path.join(base_dir, "static", "voice-ai-crm-react.zip")
+    if os.path.exists(zip_path):
+        return FileResponse(zip_path, filename="client-crm-react.zip", media_type="application/zip")
+    return JSONResponse({"error": "Archive not found"}, status_code=404)
+
+
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
 routes = [
     Route("/", homepage),
     Route("/demo", demo_page),
+    Route("/static/client-crm-react.zip", download_react_zip, methods=["GET"]),
+    Route("/static/voice-ai-crm-react.zip", download_react_zip, methods=["GET"]),
     Route("/api/chat", chat_demo, methods=["POST"]),
     Route("/api/audit", generate_audit_and_pitch, methods=["POST"]),
     Route("/api/prospects", get_prospects, methods=["GET"]),
@@ -743,7 +758,7 @@ routes = [
     Route("/api/prospects/quick-reply", quick_reply, methods=["POST"]),
     Route("/api/prospects/analytics", get_analytics, methods=["GET"]),
     Route("/api/prospects/parse-info", parse_raw_info, methods=["POST"]),
-    Mount("/static", app=StaticFiles(directory="static"), name="static")
+    Mount("/static", app=StaticFiles(directory=static_dir), name="static")
 ]
 
 app = Starlette(debug=True, routes=routes)
