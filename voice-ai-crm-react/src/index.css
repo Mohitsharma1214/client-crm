@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Warm Ivory Anthropic Theme */
+  --bg: #FAF9F5;
+  --bg-subtle: #F3EFE6;
+  --surface: #FFFFFF;
+  --surface-hover: #F8F5EE;
+  --border: #E8E2D5;
+  --border-strong: #D5CCBA;
+  --border-subtle: #F0EAE1;
+  --text: #1F1E1B;
+  --text-secondary: #57534E;
+  --text-tertiary: #8C827A;
+
+  /* Accent Tones */
+  --terracotta: #CC5500;
+  --terracotta-hover: #B34700;
+  --terracotta-soft: rgba(204, 85, 0, 0.08);
+
+  --sage-green: #2E7D32;
+  --sage-green-soft: rgba(46, 125, 50, 0.08);
+  --sage-green-border: rgba(46, 125, 50, 0.25);
+
+  --amber-warm: #B45309;
+  --amber-soft: rgba(180, 83, 9, 0.08);
+  --amber-border: rgba(180, 83, 9, 0.25);
+
+  --rose-danger: #C53030;
+  --rose-soft: rgba(197, 48, 48, 0.08);
+
+  /* Radius & Shadows */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] {
+  --bg: #141312;
+  --bg-subtle: #1C1A18;
+  --surface: #22201D;
+  --surface-hover: #2B2824;
+  --border: #332F2A;
+  --border-strong: #47413B;
+  --border-subtle: #292622;
+  --text: #F5F2EB;
+  --text-secondary: #B8B0A5;
+  --text-tertiary: #7D756C;
+  --terracotta: #E06D2B;
+  --terracotta-soft: rgba(224, 109, 43, 0.15);
+  --sage-green: #4ADE80;
+  --sage-green-soft: rgba(74, 222, 128, 0.12);
+  --sage-green-border: rgba(74, 222, 128, 0.28);
+  --amber-warm: #FBBF24;
+  --amber-soft: rgba(251, 191, 36, 0.12);
+  --amber-border: rgba(251, 191, 36, 0.28);
+  --rose-danger: #F87171;
+  --rose-soft: rgba(248, 113, 113, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+

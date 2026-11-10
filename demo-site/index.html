@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Healing Touch Dental & Aesthetic Clinic | 24/7 AI Receptionist Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --accent: #10b981;
+      --dark: #0f172a;
+      --muted: #64748b;
+      --light-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: var(--light-bg);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    /* Top Live Demo Notice */
+    .demo-bar {
+      background: linear-gradient(90deg, #0f172a, #1e293b);
+      color: #94a3b8;
+      padding: 10px 20px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .demo-pill {
+      background: #0ea5e9;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.5px;
+    }
+
+    /* Header */
+    header {
+      background: white;
+      padding: 18px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--dark);
+      text-decoration: none;
+    }
+    .logo-badge {
+      background: #e0f2fe;
+      color: var(--primary);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 1.2rem;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .btn-header-call {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .btn-header-cta {
+      background: var(--primary);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-header-cta:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Hero Section */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 24px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 50px;
+      align-items: center;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+    .hero h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      line-height: 1.18;
+      color: var(--dark);
+      margin-bottom: 16px;
+    }
+    .hero h1 span {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+    .hero-features {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+    .hero-feat-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #334155;
+    }
+    .hero-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+    }
+    .doctor-profile {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .doc-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #e0f2fe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+    }
+    .doc-info h3 { font-size: 1.1rem; font-weight: 800; color: var(--dark); }
+    .doc-info p { font-size: 0.82rem; color: var(--muted); }
+
+    /* Services Section */
+    .services-sec {
+      background: white;
+      padding: 70px 24px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .sec-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .sec-header {
+      text-align: center;
+      max-width: 650px;
+      margin: 0 auto 50px auto;
+    }
+    .sec-header h2 { font-size: 2rem; font-weight: 800; color: var(--dark); margin-bottom: 10px; }
+    .sec-header p { color: var(--muted); font-size: 0.95rem; }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+    .service-card {
+      background: var(--light-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .service-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 20px -5px rgba(0,0,0,0.06);
+    }
+    .srv-icon { font-size: 2rem; margin-bottom: 14px; }
+    .srv-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; color: var(--dark); }
+    .srv-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; min-height: 40px; }
+    .srv-price {
+      font-weight: 800;
+      color: var(--primary);
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+    .srv-btn {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .srv-btn:hover { background: var(--primary); color: white; }
+
+    /* Floating AI Receptionist Launcher */
+    .ai-launcher {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: white;
+      padding: 14px 22px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(2, 132, 199, 0.4);
+      z-index: 1000;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .ai-launcher:hover {
+      transform: scale(1.04);
+      box-shadow: 0 16px 36px rgba(2, 132, 199, 0.5);
+    }
+    .ai-pulse-dot {
+      width: 10px;
+      height: 10px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
+    }
+    .ai-launcher-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .ai-launcher-title {
+      font-weight: 800;
+      font-size: 0.95rem;
+      line-height: 1.2;
+    }
+    .ai-launcher-sub {
+      font-size: 0.72rem;
+      opacity: 0.85;
+    }
+
+    /* AI Chat Window Modal */
+    .ai-chat-modal {
+      position: fixed;
+      bottom: 90px;
+      right: 24px;
+      width: 380px;
+      max-width: calc(100vw - 32px);
+      height: 580px;
+      max-height: calc(100vh - 120px);
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.18);
+      display: none;
+      flex-direction: column;
+      z-index: 1001;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .chat-header {
+      background: linear-gradient(135deg, #0284c7, #0f172a);
+      color: white;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-head-doc {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-head-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      position: relative;
+    }
+    .chat-head-badge {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      background: #10b981;
+      border: 2px solid white;
+      border-radius: 50%;
+    }
+    .chat-head-name { font-weight: 800; font-size: 0.95rem; }
+    .chat-head-status { font-size: 0.72rem; color: #bae6fd; }
+    .chat-close-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* Chat Messages Body */
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f8fafc;
+    }
+    .chat-bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+    .bubble-bot {
+      background: white;
+      color: var(--dark);
+      border: 1px solid var(--border);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .bubble-user {
+      background: var(--primary);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* Quick Action Chips */
+    .quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .chip {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .chip:hover {
+      background: #bae6fd;
+    }
+
+    /* In-Chat Booking Card */
+    .chat-booking-card {
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-booking-card input, .chat-booking-card select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-family: inherit;
+    }
+    .chat-booking-card input:focus, .chat-booking-card select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .btn-confirm-lead {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-confirm-lead:hover {
+      background: #059669;
+    }
+
+    /* Chat Input */
+    .chat-input-bar {
+      padding: 12px;
+      background: white;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-bar input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    .chat-input-bar input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .chat-send-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 800px) {
+      .hero { grid-template-columns: 1fr; padding: 40px 20px; }
+      header { padding: 14px 20px; }
+      .btn-header-call { display: none; }
+      .ai-chat-modal { width: calc(100vw - 24px); right: 12px; bottom: 84px; height: 500px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Demo Banner -->
+  <div class="demo-bar">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="demo-pill">PREVIEW DEMO</span>
+      <span>Custom AI Receptionist for <strong>Healing Touch Dental & Aesthetics</strong></span>
+    </div>
+    <div style="font-size: 0.75rem; color: #38bdf8;">
+      ⚡ Active 24/7 • WhatsApp Direct Dispatch
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <a href="#" class="logo">
+      <div class="logo-badge">✨</div>
+      <div>Healing Touch Dental</div>
+    </a>
+    <div class="header-actions">
+      <a href="tel:+917827168138" class="btn-header-call">📞 +91 78271 68138</a>
+      <button class="btn-header-cta" onclick="openChatWithGoal('book')">Book Consultation</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div>
+      <div class="hero-tag">
+        <span>⭐ 4.9 Stars (450+ Google Reviews)</span>
+      </div>
+      <h1>World-Class Smile Makeovers & <span>Painless Implants</span></h1>
+      <p>Gurgaon's premier center for advanced cosmetic dentistry, digital smile design, and pain-free single-visit treatments.</p>
+      
+      <div class="hero-features">
+        <div class="hero-feat-item">✅ Led by Dr. Shrey Nandi & Dr. Smriti Nandi (14+ Yrs Experience)</div>
+        <div class="hero-feat-item">✅ 3D Digital Intraoral Scanning & Painless Laser Dentistry</div>
+        <div class="hero-feat-item">✅ 0% Interest EMI Available for Aligners & Implants</div>
+      </div>
+
+      <button class="btn-header-cta" style="padding: 14px 28px; font-size: 1rem;" onclick="openChatWithGoal('pricing')">
+        💬 Ask Maya: Check Treatment Pricing
+      </button>
+    </div>
+
+    <div class="hero-card">
+      <div class="doctor-profile">
+        <div class="doc-avatar">👨‍⚕️</div>
+        <div class="doc-info">
+          <h3>Dr. Shrey Nandi (MDS)</h3>
+          <p>Chief Implantologist & Cosmetic Dentist</p>
+          <p style="font-size: 0.75rem; color: #10b981; font-weight: 700; margin-top: 4px;">● Available Mon-Sat (10 AM - 8 PM)</p>
+        </div>
+      </div>
+      <div class="doctor-profile" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+        <div class="doc-avatar" style="background: #fdf2f8;">👩‍⚕️</div>
+        <div class="doc-info">
+          <h3>Dr. Smriti K. Nandi</h3>
+          <p>Aesthetic Specialist & Smile Architect</p>
+          <p style="font-size: 0.75rem; color: #10b981; font-weight: 700; margin-top: 4px;">● Available Mon-Sat (10 AM - 7 PM)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Grid -->
+  <section class="services-sec">
+    <div class="sec-container">
+      <div class="sec-header">
+        <h2>Transparent Treatment Pricing</h2>
+        <p>No hidden fees. Book an instant doctor consultation online in 30 seconds.</p>
+      </div>
+
+      <div class="cards-grid">
+        <div class="service-card">
+          <div class="srv-icon">🦷</div>
+          <div class="srv-title">Dental Implants</div>
+          <div class="srv-desc">Permanent titanium tooth replacement with lifetime manufacturer warranty.</div>
+          <div class="srv-price">
+            <span>From ₹24,999</span>
+            <button class="srv-btn" onclick="openChatWithGoal('implants')">Inquire</button>
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div class="srv-icon">✨</div>
+          <div class="srv-title">Clear Aligners</div>
+          <div class="srv-desc">Invisible teeth straightening with 3D simulated results preview.</div>
+          <div class="srv-price">
+            <span>From ₹65,000</span>
+            <button class="srv-btn" onclick="openChatWithGoal('aligners')">Inquire</button>
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div class="srv-icon">⚡</div>
+          <div class="srv-title">Single-Sitting RCT</div>
+          <div class="srv-desc">Painless computer-controlled root canal treatment completed in 45 minutes.</div>
+          <div class="srv-price">
+            <span>From ₹4,500</span>
+            <button class="srv-btn" onclick="openChatWithGoal('rct')">Inquire</button>
+          </div>
+        </div>
+
+        <div class="service-card">
+          <div class="srv-icon">💎</div>
+          <div class="srv-title">Teeth Whitening</div>
+          <div class="srv-desc">Advanced laser whitening up to 6 shades lighter in a single visit.</div>
+          <div class="srv-price">
+            <span>From ₹6,000</span>
+            <button class="srv-btn" onclick="openChatWithGoal('whitening')">Inquire</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Floating AI Receptionist Launcher -->
+  <div class="ai-launcher" onclick="toggleChat()" id="aiLauncher">
+    <div class="ai-pulse-dot"></div>
+    <div class="ai-launcher-text">
+      <span class="ai-launcher-title">Maya • 24/7 AI Receptionist</span>
+      <span class="ai-launcher-sub">Instant prices & appointments</span>
+    </div>
+  </div>
+
+  <!-- AI Chat Modal Window -->
+  <div class="ai-chat-modal" id="chatModal">
+    <div class="chat-header">
+      <div class="chat-head-doc">
+        <div class="chat-head-avatar">
+          👩‍⚕️
+          <div class="chat-head-badge"></div>
+        </div>
+        <div>
+          <div class="chat-head-name">Maya • AI Receptionist</div>
+          <div class="chat-head-status">Healing Touch Clinic (Active 24/7)</div>
+        </div>
+      </div>
+      <button class="chat-close-btn" onclick="toggleChat()">✕</button>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-bubble bubble-bot">
+        Hello! 👋 Welcome to Healing Touch Dental & Aesthetics. I am Maya, Dr. Shrey & Dr. Smriti's 24/7 AI assistant.
+        <br><br>
+        How can I help you today?
+        <div class="quick-chips">
+          <span class="chip" onclick="handleChip('💰 Check Pricing')">💰 Check Pricing</span>
+          <span class="chip" onclick="handleChip('📅 Book Consultation')">📅 Book Consultation</span>
+          <span class="chip" onclick="handleChip('👨‍⚕️ Meet Doctors')">👨‍⚕️ Meet Doctors</span>
+          <span class="chip" onclick="handleChip('📍 Clinic Location')">📍 Clinic Location</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-bar">
+      <input type="text" id="chatInput" placeholder="Ask treatment price, doctor timings..." onkeypress="handleKey(event)">
+      <button class="chat-send-btn" onclick="sendUserMessage()">➤</button>
+    </div>
+  </div>
+
+  <script>
+    const CLINIC_INFO = {
+      name: "Healing Touch Dental & Aesthetic Clinic",
+      whatsappNumber: "917827168138",
+      doctors: "Dr. Shrey Nandi (MDS - Chief Implantologist) and Dr. Smriti K. Nandi (Aesthetic Specialist).",
+      timings: "Monday through Saturday from 10:00 AM to 8:00 PM. (Emergency appointments available 24/7 via WhatsApp).",
+      location: "Sector 45 & Palam Vihar, Gurugram (Delhi NCR).",
+      prices: {
+        "consultation": "General Doctor Consultation + Digital X-Ray is ₹500.",
+        "implants": "Permanent Dental Implants start from ₹24,999 with lifetime manufacturer warranty.",
+        "aligners": "Clear Invisible Aligners start from ₹65,000 with 0% interest EMI options.",
+        "rct": "Single-Sitting Painless Root Canal Treatment (RCT) starts at ₹4,500.",
+        "whitening": "Laser Teeth Whitening (up to 6 shades lighter) is ₹6,000.",
+        "cleaning": "Full Dental Scaling & Polishing is ₹1,200."
+      }
+    };
+
+    function toggleChat() {
+      const modal = document.getElementById('chatModal');
+      const isVisible = modal.style.display === 'flex';
+      modal.style.display = isVisible ? 'none' : 'flex';
+      if (!isVisible) {
+        document.getElementById('chatInput').focus();
+      }
+    }
+
+    function openChatWithGoal(goal) {
+      const modal = document.getElementById('chatModal');
+      modal.style.display = 'flex';
+      if (goal === 'book') {
+        handleChip('📅 Book Consultation');
+      } else if (goal === 'pricing') {
+        handleChip('💰 Check Pricing');
+      } else if (goal === 'implants') {
+        sendCustomUserQuery('How much are Dental Implants?');
+      } else if (goal === 'aligners') {
+        sendCustomUserQuery('How much are Clear Aligners?');
+      } else if (goal === 'rct') {
+        sendCustomUserQuery('What is the cost of Root Canal (RCT)?');
+      } else if (goal === 'whitening') {
+        sendCustomUserQuery('How much is Teeth Whitening?');
+      }
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter') sendUserMessage();
+    }
+
+    function handleChip(text) {
+      sendCustomUserQuery(text);
+    }
+
+    function sendUserMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      sendCustomUserQuery(text);
+    }
+
+    function sendCustomUserQuery(text) {
+      const box = document.getElementById('chatMessages');
+      box.innerHTML += `<div class="chat-bubble bubble-user">${text}</div>`;
+      box.scrollTop = box.scrollHeight;
+
+      setTimeout(() => {
+        respondToUser(text);
+      }, 450);
+    }
+
+    function respondToUser(text) {
+      const query = text.toLowerCase();
+      let reply = "";
+      let showBookingForm = false;
+
+      if (query.includes('price') || query.includes('cost') || query.includes('charge') || query.includes('rate') || query.includes('fee')) {
+        reply = `Here is our transparent pricing at Healing Touch:<br>
+        • <strong>Doctor Consultation + X-Ray:</strong> ₹500<br>
+        • <strong>Teeth Cleaning / Scaling:</strong> ₹1,200<br>
+        • <strong>Single-Sitting RCT:</strong> ₹4,500<br>
+        • <strong>Laser Teeth Whitening:</strong> ₹6,000<br>
+        • <strong>Titanium Dental Implants:</strong> From ₹24,999<br>
+        • <strong>Clear Aligners:</strong> From ₹65,000 (0% EMI available)<br><br>
+        Would you like to reserve a doctor consultation slot?`;
+        showBookingForm = true;
+      } else if (query.includes('implant')) {
+        reply = CLINIC_INFO.prices.implants + " We use US FDA-approved implants. Would you like to schedule an implant assessment?";
+        showBookingForm = true;
+      } else if (query.includes('align') || query.includes('brace')) {
+        reply = CLINIC_INFO.prices.aligners + " Our 3D scanner shows you your final smile before starting! Want to book a 3D scan?";
+        showBookingForm = true;
+      } else if (query.includes('rct') || query.includes('root canal')) {
+        reply = CLINIC_INFO.prices.rct + " It is 100% painless and completed under digital local anesthesia.";
+        showBookingForm = true;
+      } else if (query.includes('doctor') || query.includes('specialist') || query.includes('who')) {
+        reply = CLINIC_INFO.doctors + " Both doctors have over 14 years of surgical experience in Gurgaon and South Delhi.";
+      } else if (query.includes('time') || query.includes('hour') || query.includes('open') || query.includes('when')) {
+        reply = CLINIC_INFO.timings;
+      } else if (query.includes('location') || query.includes('where') || query.includes('address')) {
+        reply = CLINIC_INFO.location + " We have dedicated patient parking available.";
+      } else if (query.includes('book') || query.includes('appointment') || query.includes('consultation') || query.includes('slot')) {
+        reply = "I would be delighted to arrange that with Dr. Shrey or Dr. Smriti! Please fill in your preferred details below:";
+        showBookingForm = true;
+      } else {
+        reply = "I'm right here to help! I can provide treatment estimates, doctor credentials, or schedule your visit directly to Dr. Shrey's WhatsApp.";
+        showBookingForm = true;
+      }
+
+      const box = document.getElementById('chatMessages');
+      let botHtml = `<div class="chat-bubble bubble-bot">${reply}`;
+
+      if (showBookingForm) {
+        botHtml += `
+          <div class="chat-booking-card" id="bookingCard">
+            <div style="font-weight: 700; font-size: 0.8rem; color: #0369a1;">⚡ Quick Appointment Request</div>
+            <select id="leadService">
+              <option value="Doctor Consultation (₹500)">Doctor Consultation (₹500)</option>
+              <option value="Dental Implants (From ₹24,999)">Dental Implants (From ₹24,999)</option>
+              <option value="Clear Aligners (From ₹65,000)">Clear Aligners (From ₹65,000)</option>
+              <option value="Single-Sitting RCT (₹4,500)">Single-Sitting RCT (₹4,500)</option>
+              <option value="Teeth Cleaning (₹1,200)">Teeth Cleaning (₹1,200)</option>
+            </select>
+            <input type="text" id="leadName" placeholder="Your Full Name">
+            <input type="tel" id="leadPhone" placeholder="Mobile / WhatsApp Number (10 digits)">
+            <select id="leadTime">
+              <option value="Tomorrow Morning (11:00 AM)">Tomorrow Morning (11:00 AM)</option>
+              <option value="Tomorrow Afternoon (3:30 PM)">Tomorrow Afternoon (3:30 PM)</option>
+              <option value="Tomorrow Evening (6:00 PM)">Tomorrow Evening (6:00 PM)</option>
+              <option value="This Weekend">This Weekend</option>
+            </select>
+            <button class="btn-confirm-lead" onclick="confirmAppointment()">
+              ✅ Confirm & Send to Clinic WhatsApp
+            </button>
+          </div>
+        `;
+      }
+
+      botHtml += `</div>`;
+      box.innerHTML += botHtml;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function confirmAppointment() {
+      const name = document.getElementById('leadName').value.trim();
+      const phone = document.getElementById('leadPhone').value.trim();
+      const service = document.getElementById('leadService').value;
+      const time = document.getElementById('leadTime').value;
+
+      if (!name || phone.length < 8) {
+        alert("Please enter your name and valid phone number so the clinic can confirm your booking.");
+        return;
+      }
+
+      // Pre-fill direct WhatsApp message to Dr. Shrey's clinic
+      const clinicMsg = encodeURIComponent(
+        `Hi Dr. Shrey & Team!\nI just scheduled an appointment via your website AI Receptionist:\n\n• Patient Name: ${name}\n• Phone: ${phone}\n• Treatment: ${service}\n• Preferred Slot: ${time}\n\nPlease confirm my consultation slot.`
+      );
+      const waUrl = `https://wa.me/${CLINIC_INFO.whatsappNumber}?text=${clinicMsg}`;
+
+      const box = document.getElementById('chatMessages');
+      box.innerHTML += `
+        <div class="chat-bubble bubble-bot" style="background: #f0fdf4; border-color: #86efac;">
+          🎉 <strong>Appointment Request Received!</strong><br><br>
+          We have forwarded your request for <strong>${service}</strong> on <strong>${time}</strong> to Dr. Shrey & Dr. Smriti.<br><br>
+          <a href="${waUrl}" target="_blank" style="display: block; background: #10b981; color: white; text-align: center; padding: 10px; border-radius: 8px; font-weight: 800; text-decoration: none; margin-top: 6px;">
+            💬 Tap to Open WhatsApp with Clinic
+          </a>
+        </div>
+      `;
+      box.scrollTop = box.scrollHeight;
+
+      // Remove the form card so user doesn't double-submit
+      const card = document.getElementById('bookingCard');
+      if (card) card.remove();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,4602 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client Pipeline & Status Console | Mohit Sharma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ========================================================
+       ANTHROPIC DESIGN SYSTEM TOKENS (LIGHT & DARK)
+       ======================================================== */
+    :root {
+      /* Warm Ivory / Paper Light Palette (Iconic Anthropic aesthetic) */
+      --bg: #FAF9F5;
+      --bg-subtle: #F3F1EB;
+      --surface: #FFFFFF;
+      --surface-hover: #F6F4EE;
+      --surface-active: #EFECE4;
+      --border: #E6E2D8;
+      --border-subtle: #ECE9E1;
+      --border-strong: #D5CFBF;
+      
+      --text: #191816;
+      --text-secondary: #5E5B54;
+      --text-tertiary: #8E8A80;
+      --text-disabled: #B4B0A6;
+      
+      /* Anthropic Burnt Terracotta / Ochre */
+      --terracotta: #CC6644;
+      --terracotta-hover: #B85535;
+      --terracotta-soft: #F9EFEB;
+      --terracotta-border: #F0D5CA;
+      
+      /* Status Accents (Muted, warm, restrained) */
+      --sage-green: #2B6E48;
+      --sage-green-soft: #EDF6F0;
+      --sage-green-border: #C8E3D2;
+      
+      --amber-warm: #A05915;
+      --amber-soft: #FDF4EB;
+      --amber-border: #F3DAC0;
+      
+      --slate-blue: #2A5A88;
+      --slate-blue-soft: #EEF4F9;
+      --slate-blue-border: #CDE0EE;
+      
+      --rose-danger: #B43838;
+      --rose-danger-soft: #FCEFEF;
+      --rose-danger-border: #F3CBCB;
+
+      --shadow-sm: 0 1px 2px rgba(25, 24, 22, 0.04);
+      --shadow-md: 0 3px 8px rgba(25, 24, 22, 0.06), 0 1px 3px rgba(25, 24, 22, 0.04);
+      --shadow-lg: 0 10px 24px rgba(25, 24, 22, 0.08), 0 3px 6px rgba(25, 24, 22, 0.04);
+      --shadow-modal: 0 24px 48px -12px rgba(25, 24, 22, 0.18), 0 0 0 1px rgba(25, 24, 22, 0.06);
+
+      --font-serif: 'Fraunces', Georgia, serif;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+    }
+
+    [data-theme="dark"] {
+      /* Claude / Anthropic Dark Aesthetic */
+      --bg: #141413;
+      --bg-subtle: #1C1B19;
+      --surface: #201F1D;
+      --surface-hover: #292825;
+      --surface-active: #32312D;
+      --border: #2E2D29;
+      --border-subtle: #252421;
+      --border-strong: #3D3B35;
+      
+      --text: #F2F0E8;
+      --text-secondary: #ABA89E;
+      --text-tertiary: #78756D;
+      --text-disabled: #55534D;
+      
+      --terracotta: #D97757;
+      --terracotta-hover: #E38869;
+      --terracotta-soft: rgba(217, 119, 87, 0.14);
+      --terracotta-border: rgba(217, 119, 87, 0.3);
+      
+      --sage-green: #4ADE80;
+      --sage-green-soft: rgba(74, 222, 128, 0.12);
+      --sage-green-border: rgba(74, 222, 128, 0.28);
+      
+      --amber-warm: #FBBF24;
+      --amber-soft: rgba(251, 191, 36, 0.12);
+      --amber-border: rgba(251, 191, 36, 0.28);
+      
+      --slate-blue: #70B4FF;
+      --slate-blue-soft: rgba(112, 180, 255, 0.12);
+      --slate-blue-border: rgba(112, 180, 255, 0.28);
+      
+      --rose-danger: #F87171;
+      --rose-danger-soft: rgba(248, 113, 113, 0.12);
+      --rose-danger-border: rgba(248, 113, 113, 0.28);
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.5);
+      --shadow-modal: 0 24px 56px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    /* Reset & Base Setup */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      position: relative;
+      box-sizing: border-box;
+    }
+
+    .view-hidden,
+    #kanbanViewWrapper.view-hidden,
+    #mobileSwipeHint.view-hidden,
+    #tableViewWrapper.view-hidden {
+      display: none !important;
+    }
+
+    /* ========================================================
+       TOP NAVBAR / HEADER (Clean Anthropic Wordmark & Actions)
+       ======================================================== */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--terracotta);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      font-family: var(--font-serif);
+      font-weight: 700;
+      user-select: none;
+      box-shadow: 0 2px 6px rgba(204, 102, 68, 0.25);
+    }
+
+    .brand-title {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      font-family: var(--font-sans);
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      padding: 8px 16px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-primary {
+      background-color: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+    .btn-primary:hover {
+      opacity: 0.92;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-terracotta {
+      background-color: var(--terracotta);
+      color: #FFFFFF;
+      border-color: var(--terracotta);
+    }
+    .btn-terracotta:hover {
+      background-color: var(--terracotta-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--surface);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover {
+      background-color: var(--surface-hover);
+      border-color: var(--border-strong);
+    }
+
+    .btn-ghost {
+      background-color: transparent;
+      color: var(--text-secondary);
+      border-color: transparent;
+      padding: 7px 10px;
+    }
+    .btn-ghost:hover {
+      background-color: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+    }
+    .btn-xs {
+      font-size: 0.7rem;
+      padding: 3px 7px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-wa-blast {
+      background: #25D366;
+      color: #FFFFFF;
+      border: 1px solid #20BA5A;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 1px 3px rgba(37, 211, 102, 0.28);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .btn-wa-blast:hover {
+      background: #1EBE5D;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(37, 211, 102, 0.4);
+    }
+    .btn-wa-blast:disabled {
+      background: var(--bg-subtle);
+      color: var(--text-tertiary);
+      border-color: var(--border);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .header-desktop-only {
+      display: inline-flex;
+    }
+    @media (max-width: 820px) {
+      .header-desktop-only {
+        display: none !important;
+      }
+    }
+
+    .db-status-pill {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 6px 12px;
+      border-radius: 30px;
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .db-status-pill:hover {
+      border-color: var(--border-strong);
+      background: var(--surface-hover);
+    }
+    .db-text-short {
+      display: none;
+    }
+    .db-text-full {
+      display: inline;
+    }
+    .db-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10B981;
+      display: inline-block;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Theme Toggle */
+    .theme-toggle-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: all 0.15s ease;
+    }
+    .theme-toggle-btn:hover {
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    /* ========================================================
+       MAIN CONTAINER & LAYOUT
+       ======================================================== */
+    main {
+      max-width: 1560px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 32px 64px 32px;
+      flex: 1;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
+    /* Page Hero / Section Header */
+    .page-header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .page-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--terracotta);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .page-title {
+      font-family: var(--font-serif);
+      font-size: 1.85rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .page-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      max-width: 640px;
+    }
+
+    /* ========================================================
+       METRICS / KPI STRIP (Refined Editorial Anthropic Style)
+       ======================================================== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .kpi-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 16px;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .kpi-tile:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 8px;
+      min-width: 0;
+    }
+    .kpi-label {
+      font-family: var(--font-sans);
+      font-size: 0.69rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .kpi-badge {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 12px;
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .kpi-badge.badge-green {
+      background: var(--sage-green-soft);
+      color: var(--sage-green);
+      border-color: var(--sage-green-border);
+    }
+    .kpi-badge.badge-amber {
+      background: var(--amber-soft);
+      color: var(--amber-warm);
+      border-color: var(--amber-border);
+    }
+
+    .kpi-value {
+      font-family: var(--font-serif);
+      font-size: 2.15rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .kpi-subtitle {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+    }
+
+    /* ========================================================
+       TOOLBAR / FILTERS & VIEW TOGGLE
+       ======================================================== */
+    .controls-strip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px 18px;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .filter-pill {
+      font-family: var(--font-sans);
+      font-size: 0.77rem;
+      font-weight: 600;
+      padding: 6px 13px;
+      border-radius: 30px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .filter-pill:hover {
+      background: var(--surface-hover);
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+    .filter-pill.active {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+    .filter-pill.pill-replied.active {
+      background: var(--sage-green);
+      color: #FFFFFF;
+      border-color: var(--sage-green);
+    }
+
+    .filter-count {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      opacity: 0.85;
+      padding: 1px 5px;
+      border-radius: 10px;
+      background: rgba(125, 125, 125, 0.15);
+    }
+    .filter-pill.active .filter-count {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .search-and-view {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      position: relative;
+    }
+    .search-box input {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 7px 12px 7px 32px;
+      color: var(--text);
+      width: 250px;
+      transition: all 0.15s ease;
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--terracotta);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px var(--terracotta-soft);
+    }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-tertiary);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    .select-dropdown {
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 7px 10px;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .select-dropdown:focus {
+      outline: none;
+      border-color: var(--terracotta);
+    }
+
+    .view-switcher {
+      display: flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 3px;
+    }
+    .view-btn {
+      font-family: var(--font-sans);
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .view-btn:hover { color: var(--text); }
+    .view-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ========================================================
+       TABLE VIEW (Dense, Elegant, Highly Legible Data Grid)
+       ======================================================== */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.83rem;
+    }
+
+    thead th {
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      background: var(--bg-subtle);
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background-color 0.1s ease;
+    }
+    tbody tr:hover {
+      background-color: var(--surface-hover);
+    }
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    td {
+      padding: 14px 18px;
+      vertical-align: middle;
+      color: var(--text);
+    }
+
+    .client-title {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.88rem;
+    }
+    .client-meta {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    .client-owner {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .client-tag {
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .website-link {
+      font-size: 0.72rem;
+      color: var(--terracotta);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      word-break: break-all;
+    }
+    .website-link:hover { text-decoration: underline; }
+
+    /* Phone & WhatsApp Link */
+    .phone-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .phone-number {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .wa-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      background: #25D366;
+      border: 1px solid #20BA5A;
+      padding: 6px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      width: fit-content;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 3px rgba(37, 211, 102, 0.25);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .wa-button:hover, .wa-button:active {
+      background: #1EBE5D;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(37, 211, 102, 0.35);
+    }
+
+    /* Reply Status Interactive Toggle Pill */
+    .reply-toggle {
+      font-family: var(--font-sans);
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 20px;
+      border: 1px solid;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .reply-toggle.is-replied {
+      background: var(--sage-green-soft);
+      color: var(--sage-green);
+      border-color: var(--sage-green-border);
+    }
+    .reply-toggle.is-replied:hover {
+      background: var(--sage-green);
+      color: #FFFFFF;
+    }
+    .reply-toggle.is-awaiting {
+      background: var(--bg);
+      color: var(--text-tertiary);
+      border-color: var(--border);
+    }
+    .reply-toggle.is-awaiting:hover {
+      background: var(--surface-hover);
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    /* Stage Select */
+    .stage-select {
+      font-family: var(--font-sans);
+      font-size: 0.76rem;
+      font-weight: 500;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+    .stage-select:focus {
+      outline: none;
+      border-color: var(--terracotta);
+    }
+
+    /* Note Snippet */
+    .note-cell {
+      max-width: 260px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .note-snippet {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 9px;
+      line-height: 1.35;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .note-snippet:hover {
+      border-color: var(--border-strong);
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .weakness-cell {
+      font-size: 0.76rem;
+      color: var(--text-tertiary);
+      max-width: 240px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    /* ========================================================
+       KANBAN VIEW (Tactile Drag & Drop Columns)
+       ======================================================== */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(220px, 1fr));
+      gap: 14px;
+      overflow-x: auto;
+      padding-bottom: 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .kanban-column {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      min-height: 540px;
+      transition: all 0.2s ease;
+      min-width: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .kanban-column.drag-over {
+      background: var(--surface-hover);
+      border-color: var(--terracotta);
+      box-shadow: 0 0 0 2px var(--terracotta-soft);
+    }
+
+    .kanban-column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      gap: 6px;
+      min-width: 0;
+    }
+    .kanban-column-title {
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .kanban-column-count {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .kanban-cards-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      min-height: 440px;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .empty-dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 36px 16px;
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 0.78rem;
+      font-weight: 500;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 100%;
+      min-height: 220px;
+      pointer-events: none;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .kanban-column.drag-over .empty-dropzone {
+      border-color: var(--terracotta);
+      background: var(--terracotta-soft);
+      color: var(--terracotta);
+    }
+
+    .kanban-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 13px;
+      box-shadow: var(--shadow-sm);
+      cursor: grab;
+      user-select: none;
+      transition: all 0.15s ease;
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .kanban-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .kanban-card.dragging {
+      opacity: 0.4;
+      border: 2px dashed var(--terracotta);
+      cursor: grabbing;
+    }
+
+    .kb-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .kb-card-title {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: normal;
+    }
+    .kb-deal-badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--terracotta);
+      background: var(--terracotta-soft);
+      border: 1px solid var(--terracotta-border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .kb-card-owner {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 4px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .kb-card-tag-row {
+      margin-bottom: 7px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .kb-card-contact-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 8px;
+      font-size: 0.73rem;
+      min-width: 0;
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--bg);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+    }
+    .kb-phone {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      flex-shrink: 0;
+      text-decoration: none;
+      font-size: 0.75rem;
+    }
+    .kb-website-link {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: inline-block;
+      font-size: 0.71rem;
+      color: var(--terracotta);
+      text-decoration: none;
+    }
+    .kb-website-link:hover {
+      text-decoration: underline;
+    }
+
+    .kb-card-weakness {
+      font-size: 0.73rem;
+      color: var(--text-secondary);
+      background: var(--bg);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--amber-warm);
+      border-radius: 5px;
+      padding: 6px 8px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .kb-card-note {
+      font-size: 0.72rem;
+      color: var(--sage-green);
+      background: var(--sage-green-soft);
+      border-radius: 5px;
+      padding: 5px 8px;
+      margin-bottom: 8px;
+      line-height: 1.35;
+      border: 1px solid var(--sage-green-border);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .kb-card-timestamp {
+      font-size: 0.68rem;
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .kb-card-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 10px;
+      margin-top: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .kb-wa-btn {
+      width: 100% !important;
+      justify-content: center;
+      padding: 7px 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    .kb-card-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .kb-stage-select {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.73rem;
+      padding: 5px 6px;
+      border-radius: 6px;
+    }
+    .kb-btn-icon {
+      flex-shrink: 0;
+      padding: 5px 8px;
+      font-size: 0.75rem;
+      border-radius: 6px;
+    }
+
+    /* ========================================================
+       MODALS (Crisp, High-Craft Anthropic Windows)
+       ======================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(25, 24, 22, 0.45);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+      animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 580px;
+      box-shadow: var(--shadow-modal);
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title {
+      font-family: var(--font-serif);
+      font-size: 1.28rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .modal-subtitle {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-tertiary);
+      font-size: 1.35rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+    .modal-close:hover {
+      color: var(--text);
+      background: var(--surface-hover);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.77rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      transition: all 0.15s ease;
+    }
+    .form-input:focus {
+      outline: none;
+      background: var(--surface);
+      border-color: var(--terracotta);
+      box-shadow: 0 0 0 3px var(--terracotta-soft);
+    }
+
+    /* Custom Toggle Switch for Reply Status */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background-color: var(--border-strong);
+      border-radius: 24px;
+      transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    input:checked + .toggle-slider {
+      background-color: var(--sage-green);
+    }
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Floating Toast */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--text);
+      color: var(--bg);
+      padding: 11px 18px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      display: none;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      z-index: 200;
+      animation: toastSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes toastSlide {
+      from { transform: translateY(16px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Bulk Outreach Blast Modal Styles */
+    .bulk-stats-banner {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .bulk-stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .bulk-stat-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-tertiary);
+      font-weight: 600;
+    }
+    .bulk-stat-val {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .bulk-leads-list {
+      max-height: 280px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+    .bulk-lead-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background-color 0.12s ease;
+    }
+    .bulk-lead-item:last-child {
+      border-bottom: none;
+    }
+    .bulk-lead-item:hover {
+      background: var(--surface-hover);
+    }
+    .bulk-lead-checkbox {
+      margin-top: 3px;
+      cursor: pointer;
+      accent-color: #25D366;
+      width: 16px;
+      height: 16px;
+    }
+    .bulk-lead-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .bulk-lead-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .bulk-lead-meta {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .bulk-lead-pitch-preview {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      margin-top: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 4px 8px;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bulk-lead-status {
+      font-size: 0.75rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Root page overflow protection */
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* ========================================================
+       TODAY'S ACTIONS STRIP (Follow-Up Engine)
+       ======================================================== */
+    .actions-strip {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .action-tile {
+      flex: 1;
+      min-width: 140px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .action-tile:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+    .action-tile.tile-urgent {
+      border-color: #e53e3e;
+      background: linear-gradient(135deg, #fff5f5, var(--surface));
+    }
+    .action-tile.tile-warning {
+      border-color: #dd6b20;
+      background: linear-gradient(135deg, #fffaf0, var(--surface));
+    }
+    .action-tile.tile-info {
+      border-color: #3182ce;
+      background: linear-gradient(135deg, #ebf8ff, var(--surface));
+    }
+    .action-tile.tile-success {
+      border-color: var(--sage-green);
+      background: linear-gradient(135deg, #f0fff4, var(--surface));
+    }
+    .action-tile-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .action-tile-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .action-tile-count {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .action-tile-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      white-space: nowrap;
+    }
+
+    /* Follow-Up Panel Slide-Out */
+    .followup-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      display: none;
+    }
+    .followup-panel.open {
+      display: block;
+      animation: slideDown 0.2s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .followup-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+    }
+    .followup-panel-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .followup-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background 0.1s;
+    }
+    .followup-item:hover {
+      background: var(--surface-hover);
+    }
+    .followup-item:last-child {
+      border-bottom: none;
+    }
+    .followup-urgency {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .followup-urgency.urgent { background: #e53e3e; }
+    .followup-urgency.warning { background: #dd6b20; }
+    .followup-urgency.normal { background: #3182ce; }
+    .followup-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .followup-biz {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .followup-meta {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 1px;
+    }
+    .followup-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* Quick Reply Button on Cards */
+    .btn-quick-reply {
+      background: var(--sage-green);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.12s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-quick-reply:hover {
+      background: #2f855a;
+      transform: translateY(-1px);
+    }
+
+    /* Analytics Panel */
+    .analytics-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      display: none;
+    }
+    .analytics-panel.open {
+      display: block;
+      animation: slideDown 0.2s ease;
+    }
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+      padding: 16px 18px;
+    }
+    .analytics-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+    }
+    .analytics-card-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .analytics-funnel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .funnel-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.74rem;
+    }
+    .funnel-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--border-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .funnel-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .funnel-label {
+      width: 70px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .funnel-count {
+      width: 28px;
+      text-align: right;
+      font-weight: 700;
+      color: var(--text);
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+    }
+
+    /* Google Maps Quick Add */
+    .gmaps-import-box {
+      background: var(--bg-subtle);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .gmaps-import-box input {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* Responsive: Actions strip mobile */
+    @media (max-width: 600px) {
+      .actions-strip {
+        gap: 8px;
+      }
+      .action-tile {
+        min-width: 0;
+        flex: 1 1 calc(50% - 4px);
+        padding: 10px 12px;
+        gap: 8px;
+      }
+      .action-tile-count { font-size: 1.15rem; }
+      .action-tile-label { font-size: 0.62rem; }
+      .action-tile-icon { font-size: 1.2rem; }
+      .analytics-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 12px 14px;
+      }
+      .followup-item {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 14px;
+      }
+      .followup-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+
+    /* ========================================================
+       RESPONSIVE CLIENT CARD (Mobile & Tablet List View)
+       ======================================================== */
+    .mobile-client-cards {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .client-mobile-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.15s ease;
+      position: relative;
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .client-mobile-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-md);
+    }
+
+    .cmc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    .cmc-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: normal;
+    }
+    .cmc-meta {
+      font-size: 0.77rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .cmc-owner {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-top: 1px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .cmc-tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .cmc-deal-value {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--terracotta);
+      background: var(--terracotta-soft);
+      border: 1px solid var(--terracotta-border);
+      padding: 3px 9px;
+      border-radius: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .cmc-contact-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+    }
+    .cmc-phone-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 130px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .cmc-phone {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .cmc-website-link {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+    }
+    .cmc-wa-btn {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .cmc-status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+    }
+    .cmc-stage-select {
+      flex: 1 1 100% !important;
+      width: 100%;
+      min-width: 0;
+      font-size: 0.8rem;
+      padding: 8px 10px;
+      max-width: 100%;
+      box-sizing: border-box;
+      border-radius: var(--radius-sm);
+    }
+
+    .cmc-weakness-box {
+      background: var(--bg);
+      border: 1px solid var(--border-subtle);
+      border-left: 3px solid var(--amber-warm);
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .cmc-weakness-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--amber-warm);
+      margin-bottom: 3px;
+    }
+    .cmc-weakness-text {
+      color: var(--text-secondary);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .cmc-note-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      background: var(--sage-green-soft);
+      border: 1px solid var(--sage-green-border);
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 0.8rem;
+      color: var(--sage-green);
+      line-height: 1.45;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .cmc-note-box:hover {
+      background: var(--surface);
+      border-color: var(--sage-green);
+    }
+    .cmc-note-empty {
+      font-size: 0.76rem;
+      color: var(--text-tertiary);
+      font-style: italic;
+      cursor: pointer;
+      padding: 4px 6px;
+      transition: color 0.15s ease;
+    }
+    .cmc-note-empty:hover {
+      color: var(--terracotta);
+    }
+
+    .cmc-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+      margin-top: 2px;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .cmc-timestamp {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+    .cmc-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+
+    /* Swipe Indicator Hint */
+    .mobile-swipe-hint {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      margin-bottom: 14px;
+      padding: 6px 14px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ========================================================
+       MULTI-DEVICE RESPONSIVE BREAKPOINTS
+       ======================================================== */
+
+    /* 1. Large Monitors / Desktop (>= 1280px) */
+    @media (min-width: 1280px) {
+      .kanban-board {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(220px, 1fr));
+        gap: 14px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+      }
+      .mobile-swipe-hint {
+        display: none !important;
+      }
+      #tableContainerDesktop {
+        display: block !important;
+      }
+      .mobile-client-cards {
+        display: none !important;
+      }
+    }
+
+    /* 2. Laptops & Landscape Tablets (901px - 1279px) */
+    @media (min-width: 901px) and (max-width: 1279px) {
+      main {
+        padding: 24px 20px 48px 20px;
+      }
+      .kpi-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 8px;
+      }
+      .kpi-tile {
+        padding: 12px 10px;
+      }
+      .kpi-label {
+        font-size: 0.64rem;
+        white-space: nowrap;
+      }
+      .kpi-value {
+        font-size: 1.65rem;
+      }
+      .kanban-board:not(.view-hidden) {
+        display: flex;
+        overflow-x: auto;
+        gap: 14px;
+        padding-bottom: 18px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .kanban-column {
+        flex: 0 0 295px;
+        min-height: 520px;
+      }
+      .mobile-swipe-hint:not(.view-hidden) {
+        display: flex;
+      }
+      #tableContainerDesktop {
+        display: block !important;
+      }
+      .mobile-client-cards {
+        display: none !important;
+      }
+    }
+
+    /* 3. Portrait Tablets & Large Phones (601px - 900px) */
+    @media (min-width: 601px) and (max-width: 900px) {
+      main {
+        padding: 20px 16px 40px 16px;
+      }
+      .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .page-title {
+        font-size: 1.55rem;
+      }
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .kpi-tile {
+        padding: 16px;
+      }
+      .kpi-tile:last-child {
+        grid-column: span 2;
+      }
+      .controls-strip {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      .filter-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+        overflow: visible;
+      }
+      .filter-pill {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .search-and-view {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        flex-wrap: wrap;
+      }
+      .search-box {
+        flex: 1;
+        min-width: 220px;
+      }
+      .search-box input {
+        width: 100%;
+        font-size: 16px;
+      }
+      .select-dropdown {
+        font-size: 16px;
+      }
+
+      /* Switch to Responsive Card View in List mode */
+      #tableContainerDesktop {
+        display: none !important;
+      }
+      .mobile-client-cards {
+        display: flex !important;
+      }
+
+      /* Kanban Horizontal Scroll */
+      .kanban-board:not(.view-hidden) {
+        display: flex;
+        overflow-x: auto;
+        gap: 14px;
+        padding-bottom: 18px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .kanban-column {
+        flex: 0 0 320px;
+        min-height: 500px;
+      }
+      .mobile-swipe-hint:not(.view-hidden) {
+        display: flex;
+      }
+    }
+
+    /* 4. Standard Mobile Phones (<= 600px) */
+    @media (max-width: 600px) {
+      body {
+        font-size: 14px;
+      }
+
+      header {
+        padding: 10px 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .brand-group {
+        gap: 6px;
+      }
+      .brand-title {
+        font-size: 0.92rem;
+      }
+      .brand-badge {
+        display: none;
+      }
+      .header-actions {
+        gap: 5px;
+      }
+      .db-status-pill {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+      }
+      .db-text-full {
+        display: none !important;
+      }
+      .db-text-short {
+        display: inline !important;
+      }
+      #dbStatusText {
+        max-width: none !important;
+        overflow: visible;
+        white-space: nowrap;
+      }
+
+      main {
+        padding: 14px 12px 36px 12px;
+      }
+      .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .page-title {
+        font-size: 1.35rem;
+      }
+      .page-desc {
+        font-size: 0.78rem;
+      }
+
+      /* KPI Strip: 2 columns, last spans full width */
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .kpi-tile {
+        padding: 12px;
+        border-radius: var(--radius-md);
+      }
+      .kpi-tile:last-child {
+        grid-column: span 2;
+      }
+      .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 6px;
+      }
+      .kpi-label {
+        font-size: 0.61rem;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .kpi-badge {
+        font-size: 0.64rem;
+        padding: 2px 6px;
+        white-space: nowrap;
+      }
+      .kpi-tile:last-child .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .kpi-tile:last-child .kpi-label {
+        font-size: 0.68rem;
+      }
+      .kpi-value {
+        font-size: 1.55rem;
+      }
+      .kpi-subtitle {
+        font-size: 0.68rem;
+      }
+
+      /* Controls Strip on Mobile */
+      .controls-strip {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 14px;
+        padding: 12px 14px;
+      }
+      .filter-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+        overflow: visible;
+      }
+      .filter-pill {
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 6px 10px;
+        font-size: 0.72rem;
+      }
+
+      .search-and-view {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+      }
+      .search-box {
+        width: 100%;
+      }
+      .search-box input {
+        width: 100%;
+        font-size: 16px; /* Prevents auto zoom in iOS Safari */
+        padding: 9px 12px 9px 34px;
+      }
+      .select-dropdown {
+        width: 100%;
+        font-size: 16px;
+        padding: 9px 12px;
+      }
+
+      .view-switcher {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .view-btn {
+        justify-content: center;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+      }
+
+      /* List View: Full-width Cards */
+      #tableContainerDesktop {
+        display: none !important;
+      }
+      .mobile-client-cards {
+        display: flex !important;
+        gap: 12px;
+      }
+      .client-mobile-card {
+        padding: 14px;
+      }
+      .cmc-contact-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 10px 12px !important;
+      }
+      .cmc-phone-group {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+      }
+      .cmc-website-link {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+      }
+      .cmc-wa-btn {
+        width: 100% !important;
+        justify-content: center !important;
+      }
+
+      /* Mobile Swipeable Kanban Columns */
+      .mobile-swipe-hint:not(.view-hidden) {
+        display: flex;
+      }
+      .kanban-board:not(.view-hidden) {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 12px;
+        padding-bottom: 16px;
+        margin: 0;
+        padding-left: 0;
+        padding-right: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+      .kanban-column {
+        flex: 0 0 85vw;
+        max-width: 320px;
+        scroll-snap-align: center;
+        min-height: auto;
+        padding: 12px;
+      }
+      .kanban-cards-wrapper {
+        min-height: 220px;
+      }
+      .kanban-card {
+        padding: 12px;
+      }
+
+      /* Bottom-sheet Modals on Mobile */
+      .modal-backdrop {
+        align-items: flex-end;
+        padding: 0;
+      }
+      .modal-box {
+        border-radius: 20px 20px 0 0;
+        max-width: 100%;
+        max-height: 90vh;
+        padding: 20px 16px 36px 16px;
+        margin: 0;
+        width: 100%;
+      }
+      .form-input {
+        font-size: 16px;
+        padding: 10px 12px;
+      }
+
+      /* WhatsApp Button Touch Optimization */
+      .wa-button {
+        padding: 8px 14px;
+        font-size: 0.78rem;
+        min-height: 38px;
+        border-radius: 8px;
+      }
+
+      #toast {
+        left: 14px;
+        right: 14px;
+        bottom: 18px;
+        justify-content: center;
+        text-align: center;
+        font-size: 0.8rem;
+      }
+    }
+
+    /* 5. Ultra-Compact Screens & Folded Phones (<= 360px) */
+    @media (max-width: 360px) {
+      .kpi-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .kpi-tile:last-child {
+        grid-column: span 1;
+      }
+      .kanban-column {
+        flex: 0 0 92vw;
+      }
+      .cmc-contact-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .cmc-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================
+       TOP NAVBAR
+       ======================================================== -->
+  <header>
+    <div class="brand-group">
+      <div class="brand-mark">*</div>
+      <div>
+        <div class="brand-title">
+          Client Status Console
+          <span class="brand-badge">Pipeline OS</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Neon Cloud DB Status Indicator -->
+      <button id="dbStatusBadge" class="db-status-pill" onclick="openDbModal()" title="View Neon PostgreSQL Status">
+        <span class="db-dot" id="dbStatusDot"></span>
+        <span id="dbStatusText">
+          <span class="db-text-full">Neon PostgreSQL</span>
+          <span class="db-text-short">Neon</span>
+        </span>
+      </button>
+
+      <!-- Download React Zip CTA -->
+      <a href="/static/voice-ai-crm-react.zip" download="voice-ai-crm-react.zip" class="btn btn-secondary btn-sm header-desktop-only" style="text-decoration: none;" title="Download complete React 18 + TypeScript project">
+        📥 Download React (.zip)
+      </a>
+
+      <!-- 1-Click WhatsApp Blast CTA -->
+      <button id="btnBulkSendHeader" class="btn btn-wa-blast btn-sm header-desktop-only" onclick="openBulkSendModal()" title="1-Click WhatsApp outreach to all unsent clients">
+        <span>⚡ Send All Unsent (<span id="headerUnsentCount">0</span>)</span>
+      </button>
+
+      <!-- Theme Switcher (Anthropic Warm Ivory <-> Dark) -->
+      <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        🌓
+      </button>
+
+      <!-- Add New Client CTA -->
+      <button class="btn btn-terracotta btn-sm" onclick="openAddLeadModal()">
+        <span>+</span> Add Client
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       MAIN APP WORKSPACE
+       ======================================================== -->
+  <main>
+    <!-- Section Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-eyebrow">Client Acquisition & Real-Time Status</div>
+        <h1 class="page-title">Executive Pipeline Overview</h1>
+        <p class="page-desc">Track and manage client outreach, instantly log reply status, update negotiation stages, and execute 1-click WhatsApp messaging.</p>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <button id="btnBulkSendAction" class="btn btn-wa-blast btn-sm" onclick="openBulkSendModal()" title="1-Click WhatsApp outreach to all unsent clients">
+          <span>⚡ Send to All Unsent (<span id="actionUnsentCount">0</span>)</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="fetchLeads(true)">
+          🔄 Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         TODAY'S ACTIONS STRIP (Smart Follow-Up & Workflow Engine)
+         ======================================================== -->
+    <div class="actions-strip" id="actionsStrip">
+      <!-- Action 1: Overdue Follow-ups -->
+      <div class="action-tile tile-urgent" onclick="toggleFollowUpPanel('overdue')" title="Click to view clients needing immediate follow-up">
+        <div class="action-tile-icon">🔴</div>
+        <div class="action-tile-info">
+          <div class="action-tile-count" id="actionCountOverdue">0</div>
+          <div class="action-tile-label">Overdue Follow-Ups</div>
+        </div>
+      </div>
+
+      <!-- Action 2: Follow-ups Due Today -->
+      <div class="action-tile tile-warning" onclick="toggleFollowUpPanel('due_today')" title="Follow-ups due today (3-5 days since initial pitch)">
+        <div class="action-tile-icon">🟡</div>
+        <div class="action-tile-info">
+          <div class="action-tile-count" id="actionCountDueToday">0</div>
+          <div class="action-tile-label">Due Today</div>
+        </div>
+      </div>
+
+      <!-- Action 3: Upcoming Follow-ups -->
+      <div class="action-tile tile-info" onclick="toggleFollowUpPanel('upcoming')" title="Scheduled follow-ups in next 1-2 days">
+        <div class="action-tile-icon">🔵</div>
+        <div class="action-tile-info">
+          <div class="action-tile-count" id="actionCountUpcoming">0</div>
+          <div class="action-tile-label">Upcoming (1-2d)</div>
+        </div>
+      </div>
+
+      <!-- Action 4: Niche Performance Funnel -->
+      <div class="action-tile tile-success" onclick="toggleAnalyticsPanel()" title="View conversion rate and ROI by industry niche">
+        <div class="action-tile-icon">📊</div>
+        <div class="action-tile-info">
+          <div class="action-tile-count" id="actionCountNiches">5</div>
+          <div class="action-tile-label">Niche Analytics</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOLLOW-UP WORKSPACE PANEL (Collapsible) -->
+    <div class="followup-panel" id="followUpPanel">
+      <div class="followup-panel-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="followUpPanelIcon">⏰</span>
+          <span class="followup-panel-title" id="followUpPanelTitle">Follow-Up Action Queue</span>
+          <span class="kpi-badge" id="followUpPanelBadge" style="background: var(--terracotta-soft); color: var(--terracotta); border-color: var(--terracotta);">0 Actionable</span>
+        </div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <button class="btn btn-wa-blast btn-xs" id="btnBlastFollowUps" onclick="blastFollowUps()" title="Send tailored 2nd-touch WhatsApp follow-up to all in queue">
+            ⚡ Blast Follow-Ups (<span id="blastFollowUpCount">0</span>)
+          </button>
+          <button class="btn btn-secondary btn-xs" onclick="toggleFollowUpPanel()">✕ Close</button>
+        </div>
+      </div>
+      <div id="followUpList" style="max-height: 340px; overflow-y: auto;">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- NICHE ANALYTICS PANEL (Collapsible) -->
+    <div class="analytics-panel" id="analyticsPanel">
+      <div class="followup-panel-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>📊</span>
+          <span class="followup-panel-title">Niche Conversion & Performance Analytics</span>
+        </div>
+        <button class="btn btn-secondary btn-xs" onclick="toggleAnalyticsPanel()">✕ Close</button>
+      </div>
+      <div class="analytics-grid" id="analyticsGrid">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-grid">
+      <!-- Card 1: Total Leads -->
+      <div class="kpi-tile">
+        <div class="kpi-header">
+          <span class="kpi-label">Total Prospects</span>
+          <span class="kpi-badge" id="kpiTotalBadge">24</span>
+        </div>
+        <div class="kpi-value" id="kpiTotal">24</div>
+        <div class="kpi-subtitle">Audited high-ticket businesses</div>
+      </div>
+
+      <!-- Card 2: Contacted / Pitched -->
+      <div class="kpi-tile">
+        <div class="kpi-header">
+          <span class="kpi-label">Pitches Sent</span>
+          <span class="kpi-badge" id="kpiSentPct">100%</span>
+        </div>
+        <div class="kpi-value" id="kpiSent">24</div>
+        <div class="kpi-subtitle" id="kpiSentSub">24 sent • awaiting reply</div>
+      </div>
+
+      <!-- Card 3: Replied / Interested -->
+      <div class="kpi-tile">
+        <div class="kpi-header">
+          <span class="kpi-label">Clients Replied</span>
+          <span class="kpi-badge badge-green" id="kpiReplyRate">0% Rate</span>
+        </div>
+        <div class="kpi-value" style="color: var(--sage-green);" id="kpiReplied">0</div>
+        <div class="kpi-subtitle">High-intent responses</div>
+      </div>
+
+      <!-- Card 4: Demos & Discussions -->
+      <div class="kpi-tile">
+        <div class="kpi-header">
+          <span class="kpi-label">In Discussion</span>
+          <span class="kpi-badge badge-amber" id="kpiDiscussionBadge">Active</span>
+        </div>
+        <div class="kpi-value" style="color: var(--amber-warm);" id="kpiDiscussion">0</div>
+        <div class="kpi-subtitle">Calls & live walkthroughs</div>
+      </div>
+
+      <!-- Card 5: Closed Won Revenue -->
+      <div class="kpi-tile">
+        <div class="kpi-header">
+          <span class="kpi-label">Closed Revenue</span>
+          <span class="kpi-badge" id="kpiClosedCount">0 Won</span>
+        </div>
+        <div class="kpi-value" style="color: var(--terracotta);" id="kpiRevenue">₹0</div>
+        <div class="kpi-subtitle" id="kpiPipelineVal">Pipeline: ₹0</div>
+      </div>
+    </div>
+
+    <!-- CONTROLS & FILTER BAR -->
+    <div class="controls-strip">
+      <!-- Status Filter Pills -->
+      <div class="filter-pills">
+        <button class="filter-pill active" onclick="setFilter('ALL', this)">
+          All <span class="filter-count" id="countAll">24</span>
+        </button>
+        <button class="filter-pill pill-replied" onclick="setFilter('REPLIED', this)">
+          💬 Replied <span class="filter-count" id="countReplied">0</span>
+        </button>
+        <button class="filter-pill" onclick="setFilter('AWAITING', this)">
+          ⏳ Awaiting Reply <span class="filter-count" id="countAwaiting">24</span>
+        </button>
+        <button class="filter-pill" onclick="setFilter('READY', this)">
+          🚀 Ready to Pitch <span class="filter-count" id="countReady">0</span>
+        </button>
+        <button class="filter-pill" onclick="setFilter('DISCUSSION', this)">
+          🎬 In Discussion <span class="filter-count" id="countDiscussion">0</span>
+        </button>
+        <button class="filter-pill" onclick="setFilter('WON', this)">
+          🏆 Won <span class="filter-count" id="countWon">0</span>
+        </button>
+      </div>
+
+      <!-- Search, Industry Filter, & View Toggle -->
+      <div class="search-and-view">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search business, owner, phone..." oninput="applyFilters()">
+        </div>
+
+        <select id="nicheFilter" class="select-dropdown" onchange="applyFilters()">
+          <option value="ALL">All Industries</option>
+          <option value="Dental">Dentistry & Implants</option>
+          <option value="Aesthetic">Aesthetic & Dermatology</option>
+          <option value="Interior">Interior Design</option>
+          <option value="Real Estate">Luxury Real Estate</option>
+          <option value="Salon">Luxury Salon</option>
+        </select>
+
+        <div class="view-switcher">
+          <button class="view-btn active" id="btnTableView" onclick="switchView('table')">
+            <span>☰</span> List
+          </button>
+          <button class="view-btn" id="btnKanbanView" onclick="switchView('kanban')">
+            <span>▥</span> Kanban
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 1: DATA TABLE & RESPONSIVE CARDS -->
+    <div id="tableViewWrapper">
+      <!-- Desktop Wide View Table -->
+      <div class="table-card table-container" id="tableContainerDesktop">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width: 240px;">Client & Business</th>
+              <th style="min-width: 170px;">Direct Contact</th>
+              <th style="min-width: 140px;">Client Status</th>
+              <th style="min-width: 160px;">Pipeline Stage</th>
+              <th style="min-width: 240px;">Reply Notes / Follow-Up</th>
+              <th style="min-width: 220px;">Audited Weakness</th>
+              <th style="text-align: right; min-width: 110px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="clientsTableBody">
+            <tr><td colspan="7" style="text-align: center; color: var(--text-tertiary); padding: 48px;">Loading client status records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Responsive Mobile & Tablet Client Cards -->
+      <div class="mobile-client-cards" id="mobileCardsContainer">
+        <!-- Rendered by renderTableView -->
+      </div>
+    </div>
+
+    <!-- VIEW 2: KANBAN BOARD (DRAG & DROP) -->
+    <div class="mobile-swipe-hint view-hidden" id="mobileSwipeHint" style="display: none;">
+      <span>👈 Swipe horizontally to view all stages 👉</span>
+    </div>
+    <div id="kanbanViewWrapper" class="kanban-board view-hidden" style="display: none;">
+      <!-- Column 1: Ready to Pitch -->
+      <div class="kanban-column" data-stage="PITCH_READY" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'PITCH_READY')">
+        <div class="kanban-column-header">
+          <div class="kanban-column-title"><span>🚀</span> Ready to Pitch</div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button id="btnBulkSendKanban" class="btn btn-wa-blast btn-xs" onclick="openBulkSendModal()" title="Send WhatsApp pitch to all unsent leads">
+              ⚡ Send All
+            </button>
+            <span class="kanban-column-count" id="kbCountReady">0</span>
+          </div>
+        </div>
+        <div class="kanban-cards-wrapper" id="kbColReady" data-stage="PITCH_READY" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'PITCH_READY')"></div>
+      </div>
+
+      <!-- Column 2: Pitch Sent -->
+      <div class="kanban-column" data-stage="PITCH_SENT" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'PITCH_SENT')">
+        <div class="kanban-column-header">
+          <div class="kanban-column-title"><span>⏳</span> Pitch Sent</div>
+          <span class="kanban-column-count" id="kbCountSent">0</span>
+        </div>
+        <div class="kanban-cards-wrapper" id="kbColSent" data-stage="PITCH_SENT" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'PITCH_SENT')"></div>
+      </div>
+
+      <!-- Column 3: Replied / Interested -->
+      <div class="kanban-column" style="border-color: var(--sage-green-border); background: var(--sage-green-soft);" data-stage="REPLIED" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'REPLIED')">
+        <div class="kanban-column-header">
+          <div class="kanban-column-title" style="color: var(--sage-green);"><span>💬</span> Replied</div>
+          <span class="kanban-column-count" id="kbCountReplied" style="background: var(--surface); color: var(--sage-green); border-color: var(--sage-green-border);">0</span>
+        </div>
+        <div class="kanban-cards-wrapper" id="kbColReplied" data-stage="REPLIED" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'REPLIED')"></div>
+      </div>
+
+      <!-- Column 4: Demo / Meeting Booked -->
+      <div class="kanban-column" data-stage="DEMO_SHARED" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'DEMO_SHARED')">
+        <div class="kanban-column-header">
+          <div class="kanban-column-title"><span>🎬</span> In Discussion</div>
+          <span class="kanban-column-count" id="kbCountDemo">0</span>
+        </div>
+        <div class="kanban-cards-wrapper" id="kbColDemo" data-stage="DEMO_SHARED" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'DEMO_SHARED')"></div>
+      </div>
+
+      <!-- Column 5: Closed Won -->
+      <div class="kanban-column" style="border-color: var(--amber-border); background: var(--amber-soft);" data-stage="CLOSED_WON" ondragover="handleDragOver(event)" ondragenter="handleDragEnter(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'CLOSED_WON')">
+        <div class="kanban-column-header">
+          <div class="kanban-column-title" style="color: var(--amber-warm);"><span>🏆</span> Closed Won</div>
+          <span class="kanban-column-count" id="kbCountWon" style="background: var(--surface); color: var(--amber-warm); border-color: var(--amber-border);">0</span>
+        </div>
+        <div class="kanban-cards-wrapper" id="kbColWon" data-stage="CLOSED_WON" ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'CLOSED_WON')"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================================
+       MODAL 1: ADD NEW CLIENT
+       ======================================================== -->
+  <div class="modal-backdrop" id="addLeadModal" onclick="handleBackdropClick(event, 'addLeadModal')">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Add New Client Prospect</h3>
+          <div class="modal-subtitle">Save a new target business into the active acquisition pipeline.</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('addLeadModal')">&times;</button>
+      </div>
+
+      <form onsubmit="handleSaveNewLead(event)">
+        <!-- Google Maps / Quick Info AI Parser -->
+        <div class="gmaps-import-box" style="align-items: flex-start;">
+          <span style="font-size: 1.2rem; margin-top: 4px;">📍</span>
+          <textarea id="gmapsRawInput" rows="2" placeholder="Paste Google Maps link, WhatsApp contact card, or raw clinic text here..." style="flex: 1; resize: vertical; min-height: 44px;"></textarea>
+          <button type="button" class="btn btn-secondary btn-xs" onclick="parseAndAutoFillLead()" id="btnAutoFill" title="Auto-detect business name, phone, doctor, website, and location" style="margin-top: 2px;">
+            ⚡ Auto-Fill
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Business Name *</label>
+          <input type="text" id="newLeadBusiness" class="form-input" required placeholder="e.g. Apex Luxury Dental Studio">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Owner / Contact Name</label>
+            <input type="text" id="newLeadOwner" class="form-input" placeholder="e.g. Dr. Aryan Malik">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone / WhatsApp *</label>
+            <input type="text" id="newLeadPhone" class="form-input" required placeholder="+91 98765 43210">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Website</label>
+            <input type="text" id="newLeadWebsite" class="form-input" placeholder="e.g. apexclinic.in">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Industry Niche</label>
+            <input type="text" id="newLeadNiche" class="form-input" placeholder="e.g. Cosmetic Dentistry">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Location</label>
+          <input type="text" id="newLeadLocation" class="form-input" placeholder="e.g. Golf Course Road, Gurugram">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Audited Weakness</label>
+          <textarea id="newLeadWeakness" class="form-input" rows="2" placeholder="e.g. Missing after-hours inquiry capture on mobile website."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Custom WhatsApp Outreach Message (Optional)</label>
+          <textarea id="newLeadPitch" class="form-input" rows="3" placeholder="Leave empty to auto-generate personalized message..."></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addLeadModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save to Pipeline</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL 2: MANAGE CLIENT, REPLY STATUS & NOTES
+       ======================================================== -->
+  <div class="modal-backdrop" id="editLeadModal" onclick="handleBackdropClick(event, 'editLeadModal')">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="editModalTitle">Client Details</h3>
+          <div class="modal-subtitle" id="editModalSub">Update client reply status, conversation notes, and stage.</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('editLeadModal')">&times;</button>
+      </div>
+
+      <form onsubmit="handleSaveLeadEdit(event)">
+        <input type="hidden" id="editLeadId">
+
+        <!-- Reply Status Interactive Toggle -->
+        <div class="toggle-row">
+          <div>
+            <strong style="font-size: 0.88rem; display: block; color: var(--text);">Client Replied?</strong>
+            <span style="color: var(--text-secondary); font-size: 0.75rem;">Did the client message back on WhatsApp or Email?</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="editHasReplied">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Current Pipeline Stage</label>
+          <select id="editStage" class="form-input">
+            <option value="PITCH_READY">🚀 Ready to Pitch</option>
+            <option value="PITCH_SENT">⏳ Pitch Sent (Awaiting Reply)</option>
+            <option value="REPLIED">💬 Replied / Interested</option>
+            <option value="DEMO_SHARED">🎬 Demo / In Discussion</option>
+            <option value="CALL_BOOKED">📅 Call / Meeting Booked</option>
+            <option value="CLOSED_WON">🏆 Closed Won</option>
+            <option value="LOST">❌ Not Interested</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Reply Notes / Conversation Snippet</label>
+          <textarea id="editReplyNotes" class="form-input" rows="3" placeholder="What did they say? (e.g. 'Loved the concept, wants to discuss pricing for 2 branches next Tuesday.')"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Deal Value (₹)</label>
+            <input type="number" id="editDealValue" class="form-input" value="29999">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Follow-Up Date</label>
+            <input type="date" id="editFollowUp" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Custom Outreach Pitch</label>
+          <textarea id="editPitch" class="form-input" rows="3"></textarea>
+        </div>
+
+        <div style="margin-top: 10px; margin-bottom: 14px;">
+          <button type="button" class="wa-button" onclick="sendWhatsAppPitchFromModal()" style="width: 100%; justify-content: center; padding: 10px 14px; font-size: 0.82rem; border-radius: 8px;">
+            💬 Send Pitch via WhatsApp & Move to Sent
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border);">
+          <button type="button" class="btn btn-ghost" style="color: var(--rose-danger);" onclick="handleDeleteCurrentLead()">
+            🗑️ Delete Client
+          </button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('editLeadModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL 3: NEON DATABASE SYNC & STATUS
+       ======================================================== -->
+  <div class="modal-backdrop" id="connectDbModal" onclick="handleBackdropClick(event, 'connectDbModal')">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Neon PostgreSQL Cloud Sync</h3>
+          <div class="modal-subtitle">Direct, zero-cold-start cloud database integration.</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('connectDbModal')">&times;</button>
+      </div>
+
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 18px; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary);">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+          <span style="color: var(--sage-green);">●</span> <strong style="color: var(--text);">Status: Connected to Branch `production`</strong>
+        </div>
+        <div>All 24 client records are synchronized in real-time across your desktop and cloud deployment. Changes made from any browser update immediately in Neon PostgreSQL.</div>
+      </div>
+
+      <form onsubmit="handleConnectDb(event)">
+        <div class="form-group">
+          <label class="form-label">Neon Database Connection String</label>
+          <input type="text" id="neonDbUrlInput" class="form-input" placeholder="postgresql://user:password@ep-cool.us-east-2.aws.neon.tech/neondb?sslmode=require" style="font-family: var(--font-mono); font-size: 0.76rem;">
+          <span style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 4px; display: block;">Leave blank if already using environment variables (`DATABASE_URL`).</span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('connectDbModal')">Close</button>
+          <button type="submit" class="btn btn-primary" id="btnConnectDb">Verify & Re-sync</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL 4: 1-CLICK BULK WHATSAPP OUTREACH BLAST
+       ======================================================== -->
+  <div class="modal-backdrop" id="bulkSendModal" onclick="handleBackdropClick(event, 'bulkSendModal')">
+    <div class="modal-box" style="max-width: 640px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">⚡ 1-Click WhatsApp Outreach Blast</h3>
+          <div class="modal-subtitle">Directly message all unsent clients with tailored AI pitches and advance status in Neon DB.</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('bulkSendModal')">&times;</button>
+      </div>
+
+      <!-- Live Unsent Stats Banner -->
+      <div class="bulk-stats-banner">
+        <div class="bulk-stat-item">
+          <span class="bulk-stat-label">Pending Leads</span>
+          <span class="bulk-stat-val" id="bulkStatPending" style="color: var(--terracotta);">0</span>
+        </div>
+        <div class="bulk-stat-item">
+          <span class="bulk-stat-label">Selected to Send</span>
+          <span class="bulk-stat-val" id="bulkStatSelected" style="color: #25D366;">0</span>
+        </div>
+        <div class="bulk-stat-item">
+          <span class="bulk-stat-label">Pipeline Value</span>
+          <span class="bulk-stat-val" id="bulkStatValue">₹0</span>
+        </div>
+      </div>
+
+      <!-- Select All / Controls -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.78rem; flex-wrap: wrap; gap: 6px;">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; color: var(--text);">
+          <input type="checkbox" id="bulkSelectAllCheckbox" checked onchange="toggleSelectAllBulk(this.checked)" style="accent-color: #25D366; width: 15px; height: 15px;">
+          Select All Unsent Clients
+        </label>
+        <span style="color: var(--text-tertiary); font-size: 0.72rem;">Pre-personalized pitch per client</span>
+      </div>
+
+      <!-- Progress bar (shown during/after dispatch) -->
+      <div id="bulkProgressBox" style="display: none; margin-bottom: 14px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.74rem; font-weight: 600; margin-bottom: 6px;">
+          <span id="bulkProgressStatus">Dispatching WhatsApp pitches...</span>
+          <span id="bulkProgressText">0 / 0</span>
+        </div>
+        <div style="height: 6px; background: var(--border-subtle); border-radius: 3px; overflow: hidden;">
+          <div id="bulkProgressBar" style="height: 100%; width: 0%; background: #25D366; transition: width 0.25s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Checklist of Unsent Prospects -->
+      <div class="bulk-leads-list" id="bulkLeadsList">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; flex-wrap: wrap; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="executeBulkMarkOnly()" id="btnBulkMarkOnly" title="Update status to Pitch Sent in Neon DB without opening WhatsApp tabs">
+          ✓ Mark All Sent (DB Only)
+        </button>
+
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('bulkSendModal')">Cancel</button>
+          <button type="button" class="btn btn-wa-blast btn-sm" id="btnStartBulkDispatch" onclick="startBulkWhatsAppDispatch()">
+            <span>🚀 Send to (<span id="bulkSubmitCount">0</span>) Clients</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING TOAST -->
+  <div id="toast">
+    <span id="toastIcon">✓</span>
+    <span id="toastMsg">Action completed successfully</span>
+  </div>
+
+  <!-- ========================================================
+       APPLICATION LOGIC & EVENT HANDLERS
+       ======================================================== -->
+  <script>
+    let allLeads = [];
+    let currentFilter = 'ALL';
+    let currentView = 'table';
+    let draggedLeadId = null;
+
+    /* Theme Toggle */
+    function initTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeButton(savedTheme);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateThemeButton(next);
+    }
+
+    function updateThemeButton(theme) {
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) btn.innerText = theme === 'light' ? '🌙' : '☀️';
+    }
+
+    /* Instant Real-Time Dashboard Metrics Calculation */
+    function updateDashboardMetrics() {
+      if (!allLeads || !allLeads.length) return;
+
+      const total = allLeads.length;
+      const sent = allLeads.filter(l => ['PITCH_SENT', 'REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON', 'LOST'].includes(l.stage)).length;
+      const replied = allLeads.filter(l => l.has_replied || ['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON'].includes(l.stage)).length;
+      const discussion = allLeads.filter(l => ['DEMO_SHARED', 'CALL_BOOKED'].includes(l.stage)).length;
+      const won = allLeads.filter(l => l.stage === 'CLOSED_WON').length;
+
+      const awaiting = allLeads.filter(l => l.stage === 'PITCH_SENT' && !l.has_replied).length;
+      const ready = allLeads.filter(l => l.stage === 'PITCH_READY' || l.stage === 'RESEARCHED').length;
+
+      const revenue = allLeads
+        .filter(l => l.stage === 'CLOSED_WON')
+        .reduce((sum, l) => sum + (parseInt(l.deal_value) || 29999), 0);
+
+      const pipelineVal = allLeads
+        .filter(l => ['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED'].includes(l.stage))
+        .reduce((sum, l) => sum + (parseInt(l.deal_value) || 29999), 0);
+
+      const replyRate = sent > 0 ? (Math.round((replied / sent) * 1000) / 10) : 0;
+      const sentPct = total > 0 ? Math.round((sent / total) * 100) : 0;
+
+      // 1. Top KPI Ribbon Cards
+      const kpiTotal = document.getElementById('kpiTotal');
+      if (kpiTotal) kpiTotal.innerText = total;
+      const kpiTotalBadge = document.getElementById('kpiTotalBadge');
+      if (kpiTotalBadge) kpiTotalBadge.innerText = total;
+
+      const kpiSent = document.getElementById('kpiSent');
+      if (kpiSent) kpiSent.innerText = sent;
+      const kpiSentPct = document.getElementById('kpiSentPct');
+      if (kpiSentPct) kpiSentPct.innerText = `${sentPct}%`;
+      const kpiSentSub = document.getElementById('kpiSentSub');
+      if (kpiSentSub) kpiSentSub.innerText = `${Math.max(0, total - sent)} remaining to reach`;
+
+      const kpiReplied = document.getElementById('kpiReplied');
+      if (kpiReplied) kpiReplied.innerText = replied;
+      const kpiReplyRate = document.getElementById('kpiReplyRate');
+      if (kpiReplyRate) kpiReplyRate.innerText = `${replyRate}%`;
+
+      const kpiDiscussion = document.getElementById('kpiDiscussion');
+      if (kpiDiscussion) kpiDiscussion.innerText = discussion;
+      const kpiDiscussionBadge = document.getElementById('kpiDiscussionBadge');
+      if (kpiDiscussionBadge) kpiDiscussionBadge.innerText = `${discussion} Active`;
+
+      const kpiRevenue = document.getElementById('kpiRevenue');
+      if (kpiRevenue) kpiRevenue.innerText = `₹${revenue.toLocaleString('en-IN')}`;
+      const kpiClosedCount = document.getElementById('kpiClosedCount');
+      if (kpiClosedCount) kpiClosedCount.innerText = `${won} Won`;
+      const kpiPipelineVal = document.getElementById('kpiPipelineVal');
+      if (kpiPipelineVal) kpiPipelineVal.innerText = `In Discussion: ₹${pipelineVal.toLocaleString('en-IN')}`;
+
+      // 2. Filter Pill Badges
+      const countAll = document.getElementById('countAll');
+      if (countAll) countAll.innerText = total;
+      const countReplied = document.getElementById('countReplied');
+      if (countReplied) countReplied.innerText = allLeads.filter(l => l.stage === 'REPLIED').length;
+      const countAwaiting = document.getElementById('countAwaiting');
+      if (countAwaiting) countAwaiting.innerText = awaiting;
+      const countReady = document.getElementById('countReady');
+      if (countReady) countReady.innerText = ready;
+      const countDiscussion = document.getElementById('countDiscussion');
+      if (countDiscussion) countDiscussion.innerText = discussion;
+      const countWon = document.getElementById('countWon');
+      if (countWon) countWon.innerText = won;
+
+      // 3. Kanban Column Counts
+      const kbReady = document.getElementById('kbCountReady');
+      if (kbReady) kbReady.innerText = ready;
+      const kbSent = document.getElementById('kbCountSent');
+      if (kbSent) kbSent.innerText = awaiting;
+      const kbReplied = document.getElementById('kbCountReplied');
+      if (kbReplied) kbReplied.innerText = allLeads.filter(l => l.stage === 'REPLIED' || (l.stage === 'PITCH_SENT' && l.has_replied)).length;
+      const kbDemo = document.getElementById('kbCountDemo');
+      if (kbDemo) kbDemo.innerText = discussion;
+      const kbWon = document.getElementById('kbCountWon');
+      if (kbWon) kbWon.innerText = won;
+
+      // 4. Bulk Send Trigger Buttons Counter
+      updateBulkSendCounters();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* 1-Click WhatsApp Blast Helper Functions */
+    function getUnsentLeads() {
+      if (!allLeads || !allLeads.length) return [];
+      return allLeads.filter(l => 
+        (l.stage === 'PITCH_READY' || l.stage === 'RESEARCHED' || !l.stage || l.stage === '') && 
+        !l.has_replied
+      );
+    }
+
+    function updateBulkSendCounters() {
+      const unsent = getUnsentLeads();
+      const count = unsent.length;
+
+      const headerCountEl = document.getElementById('headerUnsentCount');
+      if (headerCountEl) headerCountEl.innerText = count;
+
+      const actionCountEl = document.getElementById('actionUnsentCount');
+      if (actionCountEl) actionCountEl.innerText = count;
+
+      const btnHeader = document.getElementById('btnBulkSendHeader');
+      const btnAction = document.getElementById('btnBulkSendAction');
+      const btnKanban = document.getElementById('btnBulkSendKanban');
+
+      [btnHeader, btnAction, btnKanban].forEach(btn => {
+        if (!btn) return;
+        if (count === 0) {
+          btn.style.opacity = '0.55';
+          btn.setAttribute('title', 'All prospects have already received pitches!');
+        } else {
+          btn.style.opacity = '1';
+          btn.setAttribute('title', `1-Click WhatsApp outreach to all ${count} unsent clients`);
+        }
+      });
+    }
+
+    function openBulkSendModal() {
+      const unsent = getUnsentLeads();
+      const listEl = document.getElementById('bulkLeadsList');
+      const statPending = document.getElementById('bulkStatPending');
+      const statSelected = document.getElementById('bulkStatSelected');
+      const statValue = document.getElementById('bulkStatValue');
+      const submitCount = document.getElementById('bulkSubmitCount');
+      const progressBox = document.getElementById('bulkProgressBox');
+      const selectAll = document.getElementById('bulkSelectAllCheckbox');
+
+      if (progressBox) progressBox.style.display = 'none';
+      if (selectAll) selectAll.checked = true;
+
+      const totalVal = unsent.reduce((sum, l) => sum + (parseInt(l.deal_value) || 29999), 0);
+      if (statPending) statPending.innerText = unsent.length;
+      if (statSelected) statSelected.innerText = unsent.length;
+      if (statValue) statValue.innerText = `₹${totalVal.toLocaleString('en-IN')}`;
+      if (submitCount) submitCount.innerText = unsent.length;
+
+      if (!unsent.length) {
+        if (listEl) {
+          listEl.innerHTML = `
+            <div style="padding: 32px 16px; text-align: center; color: var(--text-secondary);">
+              <div style="font-size: 2rem; margin-bottom: 8px;">🎉</div>
+              <strong style="color: var(--text); display: block; font-size: 0.95rem;">All clients have been contacted!</strong>
+              <div style="font-size: 0.76rem; margin-top: 4px; color: var(--text-tertiary);">There are no pending prospects in "Ready to Pitch" stage.</div>
+            </div>
+          `;
+        }
+        const btnDispatch = document.getElementById('btnStartBulkDispatch');
+        if (btnDispatch) btnDispatch.disabled = true;
+        const btnMarkOnly = document.getElementById('btnBulkMarkOnly');
+        if (btnMarkOnly) btnMarkOnly.disabled = true;
+      } else {
+        const btnDispatch = document.getElementById('btnStartBulkDispatch');
+        if (btnDispatch) btnDispatch.disabled = false;
+        const btnMarkOnly = document.getElementById('btnBulkMarkOnly');
+        if (btnMarkOnly) btnMarkOnly.disabled = false;
+
+        if (listEl) {
+          listEl.innerHTML = unsent.map(lead => {
+            const cleanPhone = formatWhatsAppPhone(lead.phone);
+            const pitch = lead.pitch || `Hi ${lead.owner}! Admiring your work at ${lead.business}. Quick question: would you be open to an automated 24/7 AI booking assistant for your client inquiries?`;
+            const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(pitch)}`;
+
+            return `
+              <div class="bulk-lead-item" id="bulkItem_${lead.id}">
+                <input type="checkbox" class="bulk-lead-checkbox" value="${lead.id}" checked onchange="updateBulkSelectedCount()">
+                <div class="bulk-lead-info">
+                  <div class="bulk-lead-title">
+                    <span>${escapeHtml(lead.business)}</span>
+                    <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-tertiary); font-family: var(--font-mono);">${escapeHtml(lead.phone || 'No phone')}</span>
+                  </div>
+                  <div class="bulk-lead-meta">
+                    👤 ${escapeHtml(lead.owner || 'Business Owner')} • 📍 ${escapeHtml(lead.location || 'Local')} • 🏷️ ${escapeHtml(lead.niche || 'Clinic')}
+                  </div>
+                  <div class="bulk-lead-pitch-preview" title="${escapeHtml(pitch)}">
+                    💬 ${escapeHtml(pitch)}
+                  </div>
+                </div>
+                <div class="bulk-lead-status" id="bulkStatus_${lead.id}">
+                  <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs" style="text-decoration: none;" title="Open WhatsApp manually">
+                    Open ↗
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      openModal('bulkSendModal');
+    }
+
+    function toggleSelectAllBulk(checked) {
+      const checkboxes = document.querySelectorAll('#bulkLeadsList .bulk-lead-checkbox');
+      checkboxes.forEach(cb => { cb.checked = checked; });
+      updateBulkSelectedCount();
+    }
+
+    function updateBulkSelectedCount() {
+      const checkboxes = document.querySelectorAll('#bulkLeadsList .bulk-lead-checkbox');
+      const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+      const count = checkedBoxes.length;
+
+      const statSelected = document.getElementById('bulkStatSelected');
+      if (statSelected) statSelected.innerText = count;
+
+      const submitCount = document.getElementById('bulkSubmitCount');
+      if (submitCount) submitCount.innerText = count;
+
+      const btnDispatch = document.getElementById('btnStartBulkDispatch');
+      if (btnDispatch) btnDispatch.disabled = (count === 0);
+
+      const btnMarkOnly = document.getElementById('btnBulkMarkOnly');
+      if (btnMarkOnly) btnMarkOnly.disabled = (count === 0);
+
+      const selectAll = document.getElementById('bulkSelectAllCheckbox');
+      if (selectAll) selectAll.checked = (count === checkboxes.length && count > 0);
+    }
+
+    async function startBulkWhatsAppDispatch() {
+      const checkboxes = document.querySelectorAll('#bulkLeadsList .bulk-lead-checkbox:checked');
+      const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+      if (!selectedIds.length) {
+        showToast('⚠️ No clients selected for bulk outreach');
+        return;
+      }
+
+      const selectedLeads = allLeads.filter(l => selectedIds.includes(l.id));
+      const btnDispatch = document.getElementById('btnStartBulkDispatch');
+      const btnMarkOnly = document.getElementById('btnBulkMarkOnly');
+      if (btnDispatch) {
+        btnDispatch.disabled = true;
+        btnDispatch.innerText = '⏳ Dispatching...';
+      }
+      if (btnMarkOnly) btnMarkOnly.disabled = true;
+
+      const progressBox = document.getElementById('bulkProgressBox');
+      const progressBar = document.getElementById('bulkProgressBar');
+      const progressStatus = document.getElementById('bulkProgressStatus');
+      const progressText = document.getElementById('bulkProgressText');
+      if (progressBox) progressBox.style.display = 'block';
+
+      const now = new Date();
+      const nowStr = now.toLocaleDateString('en-IN', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      // 1. Immediately advance local state and update metrics (0ms reactivity)
+      selectedLeads.forEach(lead => {
+        lead.stage = 'PITCH_SENT';
+        lead.has_replied = false;
+        lead.last_contacted = nowStr;
+      });
+      updateDashboardMetrics();
+      applyFilters();
+
+      // 2. Dispatch WhatsApp tabs with short pacing to avoid popup blocker blockage
+      let dispatched = 0;
+      for (let i = 0; i < selectedLeads.length; i++) {
+        const lead = selectedLeads[i];
+        const cleanPhone = formatWhatsAppPhone(lead.phone);
+        const pitchText = lead.pitch || `Hi ${lead.owner}! Admiring your work at ${lead.business}. Quick question: would you be open to an automated 24/7 AI booking assistant for your client inquiries?`;
+        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(pitchText)}`;
+
+        // Update progress UI
+        dispatched++;
+        const pct = Math.round((dispatched / selectedLeads.length) * 100);
+        if (progressBar) progressBar.style.width = `${pct}%`;
+        if (progressText) progressText.innerText = `${dispatched} / ${selectedLeads.length}`;
+        if (progressStatus) progressStatus.innerText = `Dispatching ${lead.business}...`;
+
+        // Update item status in modal checklist
+        const statusEl = document.getElementById(`bulkStatus_${lead.id}`);
+        if (statusEl) {
+          statusEl.innerHTML = `
+            <span style="color: #25D366; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
+              ✓ Dispatched
+              <a href="${waUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 0.68rem; color: var(--text-secondary); text-decoration: underline; margin-left: 4px;">Re-open ↗</a>
+            </span>
+          `;
+        }
+
+        // Open WhatsApp deep link
+        try {
+          window.open(waUrl, '_blank', 'noopener,noreferrer');
+        } catch (e) {
+          console.warn('Popup window.open warning:', e);
+        }
+
+        // Delay between openings
+        if (i < selectedLeads.length - 1) {
+          await new Promise(r => setTimeout(r, 450));
+        }
+      }
+
+      if (progressStatus) progressStatus.innerText = '✓ All WhatsApp outreach links dispatched!';
+
+      // 3. Persist bulk update in Neon DB
+      try {
+        const res = await fetch('/api/prospects/bulk-pitch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: selectedIds })
+        });
+        const result = await res.json();
+        console.log("Bulk pitch Neon DB response:", result);
+      } catch (err) {
+        console.error("Bulk pitch DB error:", err);
+      }
+
+      showToast(`🚀 Successfully dispatched WhatsApp messages to ${selectedLeads.length} clients!`);
+      if (btnDispatch) {
+        btnDispatch.innerText = '✓ Dispatched All';
+      }
+
+      // Re-sync stats from DB
+      loadStats();
+
+      // Automatically close modal after brief delay so user sees completion
+      setTimeout(() => {
+        closeModal('bulkSendModal');
+      }, 1400);
+    }
+
+    async function executeBulkMarkOnly() {
+      const checkboxes = document.querySelectorAll('#bulkLeadsList .bulk-lead-checkbox:checked');
+      const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+      if (!selectedIds.length) {
+        showToast('⚠️ No clients selected');
+        return;
+      }
+
+      const selectedLeads = allLeads.filter(l => selectedIds.includes(l.id));
+      const now = new Date();
+      const nowStr = now.toLocaleDateString('en-IN', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      selectedLeads.forEach(lead => {
+        lead.stage = 'PITCH_SENT';
+        lead.has_replied = false;
+        lead.last_contacted = nowStr;
+      });
+      updateDashboardMetrics();
+      applyFilters();
+
+      try {
+        await fetch('/api/prospects/bulk-pitch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: selectedIds })
+        });
+      } catch (err) {
+        console.error("Bulk mark only DB error:", err);
+      }
+
+      showToast(`✓ Marked ${selectedLeads.length} clients as "Pitch Sent" in Neon DB`);
+      closeModal('bulkSendModal');
+      loadStats();
+    }
+
+    function updateFilterCounts() {
+      updateDashboardMetrics();
+    }
+
+    /* Asynchronous Database Sync Ping */
+    async function loadStats() {
+      updateDashboardMetrics();
+      try {
+        const res = await fetch('/api/prospects/stats');
+        const s = await res.json();
+        updateDbBadge(!!s.db_connected);
+      } catch (e) {
+        console.error("Stats sync error:", e);
+      }
+    }
+
+    function updateDbBadge(isConnected) {
+      const dot = document.getElementById('dbStatusDot');
+      const fullText = document.querySelector('.db-text-full');
+      const shortText = document.querySelector('.db-text-short');
+      if (isConnected) {
+        dot.style.background = '#10B981';
+        if (fullText) fullText.innerText = 'Neon PostgreSQL';
+        if (shortText) shortText.innerText = 'Neon';
+      } else {
+        dot.style.background = '#F59E0B';
+        if (fullText) fullText.innerText = 'Local Fallback';
+        if (shortText) shortText.innerText = 'Local';
+      }
+    }
+
+    async function fetchLeads(showToastMsg = false) {
+      try {
+        const res = await fetch('/api/prospects');
+        allLeads = await res.json();
+        updateDashboardMetrics();
+        applyFilters();
+        loadStats();
+        loadFollowUps();
+        loadAnalytics();
+        if (showToastMsg) showToast("Pipeline refreshed with live cloud data");
+      } catch (e) {
+        console.error("Failed to fetch leads:", e);
+      }
+    }
+
+    /* Filters & Search */
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    }
+
+    function switchView(view) {
+      currentView = view;
+      const tableWrapper = document.getElementById('tableViewWrapper');
+      const kanbanWrapper = document.getElementById('kanbanViewWrapper');
+      const swipeHint = document.getElementById('mobileSwipeHint');
+      const btnTable = document.getElementById('btnTableView');
+      const btnKanban = document.getElementById('btnKanbanView');
+
+      if (view === 'table') {
+        if (tableWrapper) {
+          tableWrapper.classList.remove('view-hidden');
+          tableWrapper.style.display = '';
+        }
+        if (kanbanWrapper) {
+          kanbanWrapper.classList.add('view-hidden');
+          kanbanWrapper.style.display = 'none';
+        }
+        if (swipeHint) {
+          swipeHint.classList.add('view-hidden');
+          swipeHint.style.display = 'none';
+        }
+        if (btnTable) btnTable.classList.add('active');
+        if (btnKanban) btnKanban.classList.remove('active');
+      } else {
+        if (tableWrapper) {
+          tableWrapper.classList.add('view-hidden');
+          tableWrapper.style.display = 'none';
+        }
+        if (kanbanWrapper) {
+          kanbanWrapper.classList.remove('view-hidden');
+          kanbanWrapper.style.display = '';
+        }
+        if (swipeHint) {
+          swipeHint.classList.remove('view-hidden');
+          swipeHint.style.display = '';
+        }
+        if (btnTable) btnTable.classList.remove('active');
+        if (btnKanban) btnKanban.classList.add('active');
+        if (currentFilter !== 'ALL') {
+          currentFilter = 'ALL';
+          document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+          const allPill = document.querySelector('.filter-pill');
+          if (allPill) allPill.classList.add('active');
+        }
+        applyFilters();
+      }
+    }
+
+    function applyFilters() {
+      const searchEl = document.getElementById('searchInput');
+      const nicheEl = document.getElementById('nicheFilter');
+      const query = searchEl ? searchEl.value.toLowerCase().trim() : '';
+      const niche = nicheEl ? nicheEl.value : 'ALL';
+
+      let filtered = allLeads.filter(lead => {
+        // Status filter
+        if (currentFilter === 'REPLIED') {
+          if (lead.stage !== 'REPLIED') return false;
+        } else if (currentFilter === 'AWAITING') {
+          if (lead.stage !== 'PITCH_SENT' || lead.has_replied) return false;
+        } else if (currentFilter === 'READY') {
+          if (lead.stage !== 'PITCH_READY' && lead.stage !== 'RESEARCHED') return false;
+        } else if (currentFilter === 'DISCUSSION') {
+          if (!['DEMO_SHARED', 'CALL_BOOKED'].includes(lead.stage)) return false;
+        } else if (currentFilter === 'WON') {
+          if (lead.stage !== 'CLOSED_WON') return false;
+        }
+
+        // Industry niche filter
+        if (niche && niche !== 'ALL') {
+          const leadNiche = (lead.niche || '').toLowerCase();
+          if (!leadNiche.includes(niche.toLowerCase())) return false;
+        }
+
+        // Search text query
+        if (query) {
+          const hay = `${lead.business || ''} ${lead.owner || ''} ${lead.phone || ''} ${lead.location || ''} ${lead.notes || ''} ${lead.reply_notes || ''}`.toLowerCase();
+          if (!hay.includes(query)) return false;
+        }
+
+        return true;
+      });
+
+      renderTableView(filtered);
+      renderKanbanView(filtered);
+    }
+
+    /* RENDER TABLE & RESPONSIVE CARD VIEW */
+    function renderTableView(leads) {
+      const tbody = document.getElementById('clientsTableBody');
+      const cardsContainer = document.getElementById('mobileCardsContainer');
+
+      if (leads.length === 0) {
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-tertiary); padding: 48px;">No matching client records found.</td></tr>`;
+        if (cardsContainer) cardsContainer.innerHTML = `<div style="text-align: center; color: var(--text-tertiary); padding: 48px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);">No matching client records found.</div>`;
+        return;
+      }
+
+      // 1. Render Desktop Table Rows
+      if (tbody) {
+        tbody.innerHTML = '';
+        leads.forEach(lead => {
+          const isReplied = lead.has_replied || ['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON'].includes(lead.stage);
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>
+              <div class="client-title">${lead.business}</div>
+              <div class="client-meta">
+                ${lead.owner ? `<span class="client-owner">${lead.owner}</span>` : ''}
+                <span class="client-tag">${lead.niche}</span>
+              </div>
+              <div style="margin-top: 5px;">
+                ${lead.website ? `<a href="https://${lead.website}" target="_blank" class="website-link">↗ ${lead.website}</a>` : '<span style="font-size: 0.72rem; color: var(--rose-danger);">⚠️ No Website</span>'}
+              </div>
+            </td>
+
+            <td>
+              <div class="phone-cell">
+                <span class="phone-number">${lead.phone}</span>
+                <button class="wa-button" onclick="sendWhatsAppPitch('${lead.id}', event)" title="Open WhatsApp with pre-filled pitch & move to Sent">
+                  💬 WhatsApp Pitch
+                </button>
+              </div>
+            </td>
+
+            <td>
+              <button class="reply-toggle ${isReplied ? 'is-replied' : 'is-awaiting'}" onclick="toggleReplied('${lead.id}')">
+                <span>${isReplied ? '●' : '○'}</span>
+                <span>${isReplied ? 'Replied' : 'Awaiting'}</span>
+              </button>
+            </td>
+
+            <td>
+              <select class="stage-select" onchange="changeStage('${lead.id}', this.value)">
+                <option value="PITCH_READY" ${lead.stage === 'PITCH_READY' ? 'selected' : ''}>🚀 Ready to Pitch</option>
+                <option value="PITCH_SENT" ${lead.stage === 'PITCH_SENT' ? 'selected' : ''}>⏳ Pitch Sent</option>
+                <option value="REPLIED" ${lead.stage === 'REPLIED' ? 'selected' : ''}>💬 Replied</option>
+                <option value="DEMO_SHARED" ${lead.stage === 'DEMO_SHARED' ? 'selected' : ''}>🎬 In Discussion</option>
+                <option value="CALL_BOOKED" ${lead.stage === 'CALL_BOOKED' ? 'selected' : ''}>📅 Call Booked</option>
+                <option value="CLOSED_WON" ${lead.stage === 'CLOSED_WON' ? 'selected' : ''}>🏆 Closed Won</option>
+                <option value="LOST" ${lead.stage === 'LOST' ? 'selected' : ''}>❌ Not Interested</option>
+              </select>
+            </td>
+
+            <td>
+              <div class="note-cell">
+                <div class="note-snippet" onclick="openEditLeadModal('${lead.id}')" title="Click to view or edit notes">
+                  ${lead.reply_notes || lead.notes || '<span style="color: var(--text-tertiary); font-style: italic;">+ Add conversation note...</span>'}
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div class="weakness-cell">
+                ${lead.weakness || 'Missing modern 24/7 client booking presence'}
+              </div>
+            </td>
+
+            <td style="text-align: right; white-space: nowrap;">
+              ${!isReplied ? `
+                <button class="btn-quick-reply" onclick="quickLogReply('${lead.id}', event)" title="1-Tap: Mark client as Replied!">
+                  💬 Got Reply
+                </button>
+              ` : ''}
+              <button class="btn btn-secondary btn-sm" onclick='copyPitchText(${JSON.stringify(lead.pitch)})' title="Copy customized outreach pitch">
+                📋
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="openEditLeadModal('${lead.id}')" title="Edit client details">
+                ✏️
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // 2. Render Responsive Mobile/Tablet Client Cards (All Content Intact)
+      if (cardsContainer) {
+        cardsContainer.innerHTML = '';
+        leads.forEach(lead => {
+          const isReplied = lead.has_replied || ['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON'].includes(lead.stage);
+          const card = document.createElement('div');
+          card.className = 'client-mobile-card';
+          card.innerHTML = `
+            <div class="cmc-header">
+              <div>
+                <div class="cmc-title">${lead.business}</div>
+                <div class="cmc-meta">
+                  ${lead.owner ? `<div class="cmc-owner">${lead.owner}</div>` : ''}
+                  <div class="cmc-tag-row">
+                    <span class="client-tag">${lead.niche}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="cmc-deal-value">₹${(parseInt(lead.deal_value) || 29999).toLocaleString('en-IN')}</div>
+            </div>
+
+            <div class="cmc-contact-row">
+              <div class="cmc-phone-group">
+                <span class="cmc-phone">${lead.phone}</span>
+                ${lead.website ? `<a href="https://${lead.website}" target="_blank" class="website-link cmc-website-link" title="${lead.website}">↗ ${lead.website}</a>` : '<span style="font-size: 0.72rem; color: var(--rose-danger);">⚠️ No Website</span>'}
+              </div>
+              <button class="wa-button cmc-wa-btn" onclick="sendWhatsAppPitch('${lead.id}', event)" title="Open WhatsApp with pre-filled pitch & move to Sent">
+                💬 WhatsApp Pitch
+              </button>
+            </div>
+
+            <div class="cmc-status-row">
+              <button class="reply-toggle ${isReplied ? 'is-replied' : 'is-awaiting'}" onclick="toggleReplied('${lead.id}')">
+                <span>${isReplied ? '●' : '○'}</span>
+                <span>${isReplied ? 'Replied' : 'Awaiting Reply'}</span>
+              </button>
+              ${!isReplied ? `
+                <button class="btn-quick-reply" onclick="quickLogReply('${lead.id}', event)" title="1-Tap: Log Reply">
+                  💬 Got Reply
+                </button>
+              ` : ''}
+              <select class="stage-select cmc-stage-select" onchange="changeStage('${lead.id}', this.value)">
+                <option value="PITCH_READY" ${lead.stage === 'PITCH_READY' ? 'selected' : ''}>🚀 Ready to Pitch</option>
+                <option value="PITCH_SENT" ${lead.stage === 'PITCH_SENT' ? 'selected' : ''}>⏳ Pitch Sent</option>
+                <option value="REPLIED" ${lead.stage === 'REPLIED' ? 'selected' : ''}>💬 Replied</option>
+                <option value="DEMO_SHARED" ${lead.stage === 'DEMO_SHARED' ? 'selected' : ''}>🎬 In Discussion</option>
+                <option value="CALL_BOOKED" ${lead.stage === 'CALL_BOOKED' ? 'selected' : ''}>📅 Call Booked</option>
+                <option value="CLOSED_WON" ${lead.stage === 'CLOSED_WON' ? 'selected' : ''}>🏆 Closed Won</option>
+                <option value="LOST" ${lead.stage === 'LOST' ? 'selected' : ''}>❌ Not Interested</option>
+              </select>
+            </div>
+
+            <div class="cmc-weakness-box">
+              <div class="cmc-weakness-label">Audited Weakness</div>
+              <div class="cmc-weakness-text">${lead.weakness || 'Missing modern 24/7 client booking presence'}</div>
+            </div>
+
+            ${lead.reply_notes || lead.notes ? `
+              <div class="cmc-note-box" onclick="openEditLeadModal('${lead.id}')">
+                <span>💬</span>
+                <span>${lead.reply_notes || lead.notes}</span>
+              </div>
+            ` : `
+              <div class="cmc-note-empty" onclick="openEditLeadModal('${lead.id}')">
+                + Add conversation note or objection...
+              </div>
+            `}
+
+            <div class="cmc-footer">
+              <div class="cmc-timestamp">
+                ${lead.last_contacted ? `🕒 Sent: ${lead.last_contacted}` : `Added: ${lead.date_added || 'Recently'}`}
+              </div>
+              <div class="cmc-actions">
+                <button class="btn btn-secondary btn-sm" onclick='copyPitchText(${JSON.stringify(lead.pitch)})' title="Copy customized outreach pitch">
+                  📋 Copy Pitch
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="openEditLeadModal('${lead.id}')" title="Edit client details">
+                  ✏️ Edit
+                </button>
+              </div>
+            </div>
+          `;
+          cardsContainer.appendChild(card);
+        });
+      }
+    }
+
+    /* RENDER KANBAN VIEW */
+    function renderKanbanView(leads) {
+      const cols = {
+        READY: document.getElementById('kbColReady'),
+        SENT: document.getElementById('kbColSent'),
+        REPLIED: document.getElementById('kbColReplied'),
+        DEMO: document.getElementById('kbColDemo'),
+        WON: document.getElementById('kbColWon')
+      };
+
+      Object.values(cols).forEach(col => col.innerHTML = '');
+
+      const counts = { READY: 0, SENT: 0, REPLIED: 0, DEMO: 0, WON: 0 };
+
+      leads.forEach(lead => {
+        // Precise Stage Mapping (Won & Discussion prioritized over generic has_replied flag)
+        let colKey = 'READY';
+        if (lead.stage === 'CLOSED_WON') {
+          colKey = 'WON';
+        } else if (lead.stage === 'DEMO_SHARED' || lead.stage === 'CALL_BOOKED') {
+          colKey = 'DEMO';
+        } else if (lead.stage === 'REPLIED') {
+          colKey = 'REPLIED';
+        } else if (lead.stage === 'PITCH_SENT') {
+          colKey = lead.has_replied ? 'REPLIED' : 'SENT';
+        } else if (lead.stage === 'PITCH_READY' || lead.stage === 'RESEARCHED') {
+          colKey = 'READY';
+        } else {
+          colKey = lead.has_replied ? 'REPLIED' : 'SENT';
+        }
+
+        counts[colKey]++;
+
+        const card = document.createElement('div');
+        card.className = 'kanban-card';
+        card.setAttribute('draggable', 'true');
+        card.setAttribute('data-id', lead.id);
+
+        card.ondragstart = (e) => handleCardDragStart(e, lead.id);
+        card.ondragend = (e) => handleCardDragEnd(e);
+
+        card.innerHTML = `
+          <div class="kb-card-top">
+            <div class="kb-card-title">${lead.business}</div>
+            <div class="kb-deal-badge">₹${(parseInt(lead.deal_value) || 29999).toLocaleString('en-IN')}</div>
+          </div>
+          ${lead.owner ? `<div class="kb-card-owner">${lead.owner}</div>` : ''}
+          <div class="kb-card-tag-row">
+            <span class="client-tag">${lead.niche}</span>
+          </div>
+          <div class="kb-card-contact-row">
+            <a href="tel:${lead.phone}" class="kb-phone" title="Call client">${lead.phone}</a>
+            ${lead.website ? `<a href="https://${lead.website}" target="_blank" class="website-link kb-website-link" title="${lead.website}">↗ ${lead.website}</a>` : '<span style="font-size: 0.68rem; color: var(--text-tertiary);">No website</span>'}
+          </div>
+          <div class="kb-card-weakness">
+            <span style="font-weight: 600; color: var(--text-secondary);">Weakness:</span> ${lead.weakness || 'Missing 24/7 engagement'}
+          </div>
+          ${lead.reply_notes ? `<div class="kb-card-note">💬 "${lead.reply_notes}"</div>` : ''}
+          ${lead.last_contacted ? `<div class="kb-card-timestamp">🕒 Sent: ${lead.last_contacted}</div>` : ''}
+          <div class="kb-card-footer">
+            <div style="display: flex; gap: 6px; width: 100%;">
+              <button class="wa-button kb-wa-btn" style="flex: 1;" onclick="sendWhatsAppPitch('${lead.id}', event)" title="Open WhatsApp with pre-filled pitch & move to Sent">
+                💬 WhatsApp Pitch
+              </button>
+              ${lead.stage === 'PITCH_SENT' && !lead.has_replied ? `
+                <button class="btn-quick-reply" onclick="quickLogReply('${lead.id}', event)" title="1-Tap: Mark client as Replied!">
+                  💬 Got Reply
+                </button>
+              ` : ''}
+            </div>
+            <div class="kb-card-actions-row">
+              <select class="stage-select kb-stage-select" onchange="changeStage('${lead.id}', this.value)">
+                <option value="PITCH_READY" ${lead.stage === 'PITCH_READY' ? 'selected' : ''}>🚀 Ready</option>
+                <option value="PITCH_SENT" ${lead.stage === 'PITCH_SENT' ? 'selected' : ''}>⏳ Sent</option>
+                <option value="REPLIED" ${lead.stage === 'REPLIED' ? 'selected' : ''}>💬 Replied</option>
+                <option value="DEMO_SHARED" ${['DEMO_SHARED', 'CALL_BOOKED'].includes(lead.stage) ? 'selected' : ''}>🎬 Discuss</option>
+                <option value="CLOSED_WON" ${lead.stage === 'CLOSED_WON' ? 'selected' : ''}>🏆 Won</option>
+              </select>
+              <button class="btn btn-secondary btn-sm kb-btn-icon" onclick='copyPitchText(${JSON.stringify(lead.pitch)})' title="Copy outreach pitch">
+                📋
+              </button>
+              <button class="btn btn-secondary btn-sm kb-btn-icon" onclick="openEditLeadModal('${lead.id}')" title="Edit client details">
+                ✏️
+              </button>
+            </div>
+          </div>
+        `;
+        cols[colKey].appendChild(card);
+      });
+
+      // Show responsive drop target placeholder in any empty column
+      Object.keys(cols).forEach(k => {
+        if (counts[k] === 0) {
+          cols[k].innerHTML = `
+            <div class="empty-dropzone">
+              <span style="font-size: 1.25rem; opacity: 0.5;">⇣</span>
+              <span>Drop client here</span>
+            </div>
+          `;
+        }
+      });
+
+      document.getElementById('kbCountReady').innerText = counts.READY;
+      document.getElementById('kbCountSent').innerText = counts.SENT;
+      document.getElementById('kbCountReplied').innerText = counts.REPLIED;
+      document.getElementById('kbCountDemo').innerText = counts.DEMO;
+      document.getElementById('kbCountWon').innerText = counts.WON;
+    }
+
+    /* Drag & Drop Handlers */
+    function handleCardDragStart(e, id) {
+      draggedLeadId = id;
+      e.dataTransfer.setData('text/plain', id);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => {
+        if (e.target && e.target.classList) e.target.classList.add('dragging');
+      }, 0);
+    }
+
+    function handleCardDragEnd(e) {
+      if (e.target && e.target.classList) e.target.classList.remove('dragging');
+      document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('drag-over'));
+      draggedLeadId = null;
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const col = e.currentTarget.closest('.kanban-column');
+      if (col && !col.classList.contains('drag-over')) {
+        col.classList.add('drag-over');
+      }
+    }
+
+    function handleDragEnter(e) {
+      e.preventDefault();
+      const col = e.currentTarget.closest('.kanban-column');
+      if (col && !col.classList.contains('drag-over')) {
+        col.classList.add('drag-over');
+      }
+    }
+
+    function handleDragLeave(e) {
+      const col = e.currentTarget.closest('.kanban-column');
+      if (col && !col.contains(e.relatedTarget)) {
+        col.classList.remove('drag-over');
+      }
+    }
+
+    async function handleDrop(e, targetStage) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('drag-over'));
+
+      const leadId = e.dataTransfer.getData('text/plain') || draggedLeadId;
+      if (!leadId) return;
+
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead || lead.stage === targetStage) return;
+
+      const oldStage = lead.stage;
+      const isReplied = ['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON'].includes(targetStage);
+
+      // Optimistic UI updates
+      lead.stage = targetStage;
+      if (isReplied) lead.has_replied = true;
+      else if (targetStage === 'PITCH_READY' || targetStage === 'PITCH_SENT') lead.has_replied = false;
+
+      updateFilterCounts();
+      applyFilters();
+
+      const stageLabels = {
+        'PITCH_READY': 'Ready to Pitch',
+        'PITCH_SENT': 'Pitch Sent',
+        'REPLIED': 'Replied',
+        'DEMO_SHARED': 'In Discussion',
+        'CLOSED_WON': 'Closed Won'
+      };
+
+      showToast(`Moved ${lead.business} to ${stageLabels[targetStage] || targetStage}`);
+
+      try {
+        await fetch('/api/prospects/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: leadId,
+            stage: targetStage,
+            has_replied: lead.has_replied
+          })
+        });
+        loadStats();
+      } catch (err) {
+        console.error('Failed to update stage:', err);
+        lead.stage = oldStage;
+        updateFilterCounts();
+        applyFilters();
+        showToast('Error syncing stage update with database.');
+      }
+    }
+
+    /* Inline Quick Actions */
+    async function toggleReplied(id) {
+      const lead = allLeads.find(l => l.id === id);
+      if (!lead) return;
+
+      const newReplied = !lead.has_replied;
+      const newStage = newReplied ? 'REPLIED' : 'PITCH_SENT';
+
+      lead.has_replied = newReplied;
+      lead.stage = newStage;
+
+      updateFilterCounts();
+      applyFilters();
+      showToast(newReplied ? `Marked ${lead.business} as Replied` : `Marked ${lead.business} as Awaiting Reply`);
+
+      try {
+        await fetch('/api/prospects/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id, has_replied: newReplied, stage: newStage })
+        });
+        loadStats();
+      } catch (e) {
+        console.error("Failed to toggle reply status:", e);
+      }
+    }
+
+    async function changeStage(id, newStage) {
+      const lead = allLeads.find(l => l.id === id);
+      if (!lead) return;
+
+      const hasReplied = ['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON'].includes(newStage);
+
+      lead.stage = newStage;
+      if (hasReplied) lead.has_replied = true;
+
+      updateFilterCounts();
+      applyFilters();
+      showToast(`Updated stage for ${lead.business}`);
+
+      try {
+        await fetch('/api/prospects/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id, stage: newStage, has_replied: hasReplied })
+        });
+        loadStats();
+      } catch (e) {
+        console.error("Failed to change stage:", e);
+      }
+    }
+
+    function formatWhatsAppPhone(phone) {
+      if (!phone) return '';
+      let digits = (phone + '').replace(/[^0-9]/g, '');
+      if (digits.length === 10) {
+        digits = '91' + digits; // Default Indian 10-digit mobile
+      } else if (digits.length === 11 && digits.startsWith('0')) {
+        digits = '91' + digits.slice(1);
+      }
+      return digits;
+    }
+
+    async function sendWhatsAppPitch(leadId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      const cleanPhone = formatWhatsAppPhone(lead.phone);
+      if (!cleanPhone) {
+        showToast("⚠️ No valid phone number found for " + lead.business);
+        return;
+      }
+
+      const pitchText = lead.pitch || `Hi ${lead.owner}! Admiring your work at ${lead.business}. Quick question: would you be open to an automated 24/7 AI booking assistant for your client inquiries?`;
+      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(pitchText)}`;
+
+      // 1. If currently in ready/researched/empty, advance to PITCH_SENT
+      const wasReady = (lead.stage === 'PITCH_READY' || lead.stage === 'RESEARCHED' || !lead.stage);
+      if (wasReady) {
+        lead.stage = 'PITCH_SENT';
+        lead.has_replied = false;
+      }
+
+      const now = new Date();
+      lead.last_contacted = now.toLocaleDateString('en-IN', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+
+      // 2. Synchronous 0ms UI and metrics update
+      updateDashboardMetrics();
+      applyFilters();
+
+      if (wasReady) {
+        showToast(`🚀 WhatsApp opened for ${lead.business} — moved to "Pitch Sent"!`);
+      } else {
+        showToast(`🚀 Opening WhatsApp for ${lead.business}...`);
+      }
+
+      // 3. Open WhatsApp universal deep link
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+
+      // 4. Asynchronously persist update to server & Neon database
+      try {
+        await fetch('/api/prospects/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: lead.id,
+            stage: lead.stage,
+            has_replied: lead.has_replied,
+            last_contacted: lead.last_contacted,
+            pitch: lead.pitch
+          })
+        });
+        loadStats();
+      } catch (err) {
+        console.error("Failed to sync WhatsApp status to DB:", err);
+      }
+    }
+
+    function sendWhatsAppPitchFromModal() {
+      const id = document.getElementById('editLeadId').value;
+      const lead = allLeads.find(l => l.id === id);
+      if (!lead) return;
+
+      const currentPitch = document.getElementById('editPitch').value;
+      if (currentPitch) lead.pitch = currentPitch;
+
+      closeModal('editLeadModal');
+      sendWhatsAppPitch(id);
+    }
+
+    function copyPitchText(pitch) {
+      navigator.clipboard.writeText(pitch);
+      showToast("Outreach message copied to clipboard");
+    }
+
+    /* Modal Operations */
+    function openAddLeadModal() {
+      document.getElementById('addLeadModal').classList.add('open');
+    }
+
+    function openDbModal() {
+      document.getElementById('connectDbModal').classList.add('open');
+    }
+
+    function openEditLeadModal(id) {
+      const lead = allLeads.find(l => l.id === id);
+      if (!lead) return;
+
+      document.getElementById('editLeadId').value = lead.id;
+      document.getElementById('editModalTitle').innerText = lead.business;
+      document.getElementById('editModalSub').innerText = `${lead.owner} • ${lead.niche} (${lead.phone})`;
+      document.getElementById('editHasReplied').checked = !!lead.has_replied;
+      document.getElementById('editStage').value = lead.stage || 'PITCH_READY';
+      document.getElementById('editReplyNotes').value = lead.reply_notes || lead.notes || '';
+      document.getElementById('editDealValue').value = lead.deal_value || 29999;
+      document.getElementById('editFollowUp').value = lead.follow_up_date || '';
+      document.getElementById('editPitch').value = lead.pitch || '';
+
+      document.getElementById('editLeadModal').classList.add('open');
+
+      // Smart bi-directional sync between Reply Toggle & Stage Dropdown
+      const hasRepliedChk = document.getElementById('editHasReplied');
+      const stageSelect = document.getElementById('editStage');
+
+      hasRepliedChk.onchange = () => {
+        if (hasRepliedChk.checked && (stageSelect.value === 'PITCH_SENT' || stageSelect.value === 'PITCH_READY')) {
+          stageSelect.value = 'REPLIED';
+        } else if (!hasRepliedChk.checked && stageSelect.value === 'REPLIED') {
+          stageSelect.value = 'PITCH_SENT';
+        }
+      };
+
+      stageSelect.onchange = () => {
+        if (['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON'].includes(stageSelect.value)) {
+          hasRepliedChk.checked = true;
+        } else if (stageSelect.value === 'PITCH_SENT' || stageSelect.value === 'PITCH_READY') {
+          hasRepliedChk.checked = false;
+        }
+      };
+    }
+
+    function openModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) el.classList.add('open');
+    }
+
+    function closeModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) el.classList.remove('open');
+    }
+
+    function handleBackdropClick(e, modalId) {
+      if (e.target.id === modalId) closeModal(modalId);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
+      }
+    });
+
+    /* Form Handlers */
+    async function handleSaveNewLead(e) {
+      e.preventDefault();
+      const business = document.getElementById('newLeadBusiness').value.trim();
+      const owner = document.getElementById('newLeadOwner').value.trim() || 'Founder';
+      const phone = document.getElementById('newLeadPhone').value.trim();
+      const website = document.getElementById('newLeadWebsite').value.trim();
+      const niche = document.getElementById('newLeadNiche').value.trim() || 'General';
+      const location = document.getElementById('newLeadLocation').value.trim() || 'Delhi NCR';
+      const weakness = document.getElementById('newLeadWeakness').value.trim() || 'Lacks modern 24/7 engagement assistant';
+      let pitch = document.getElementById('newLeadPitch').value.trim();
+
+      if (!pitch) {
+        pitch = `Hi ${owner}! Really admire your work at ${business}. Quick observation: when potential clients visit your website on mobile after hours, they have no instant way to check pricing or book appointments on WhatsApp. I build modern high-speed websites with an embedded 24/7 AI Concierge that captures qualified leads right to your phone. I created a 60-second interactive preview for ${business}. Mind if I send the link?`;
+      }
+
+      try {
+        await fetch('/api/prospects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            business, owner, phone, website, niche, location, weakness, pitch,
+            stage: 'PITCH_READY', has_replied: false, deal_value: 29999
+          })
+        });
+        closeModal('addLeadModal');
+        showToast(`Added ${business} to pipeline`);
+        fetchLeads();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function handleSaveLeadEdit(e) {
+      e.preventDefault();
+      const id = document.getElementById('editLeadId').value;
+      const has_replied = document.getElementById('editHasReplied').checked;
+      const stage = document.getElementById('editStage').value;
+      const reply_notes = document.getElementById('editReplyNotes').value.trim();
+      const deal_value = parseInt(document.getElementById('editDealValue').value) || 29999;
+      const follow_up_date = document.getElementById('editFollowUp').value;
+      const pitch = document.getElementById('editPitch').value;
+
+      try {
+        await fetch('/api/prospects/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, has_replied, stage, reply_notes, deal_value, follow_up_date, pitch })
+        });
+        closeModal('editLeadModal');
+        showToast("Client record updated");
+        fetchLeads();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function handleDeleteCurrentLead() {
+      const id = document.getElementById('editLeadId').value;
+      if (!confirm("Are you sure you want to remove this client from your pipeline?")) return;
+
+      try {
+        await fetch('/api/prospects/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        closeModal('editLeadModal');
+        showToast("Client removed from pipeline");
+        fetchLeads();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function handleConnectDb(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnConnectDb');
+      const url = document.getElementById('neonDbUrlInput').value.trim();
+
+      btn.innerText = "Verifying...";
+      btn.disabled = true;
+
+      try {
+        if (url) {
+          await fetch('/api/db/connect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ database_url: url })
+          });
+        }
+        closeModal('connectDbModal');
+        showToast("Neon Cloud PostgreSQL connected & synchronized");
+        btn.innerText = "Verify & Re-sync";
+        btn.disabled = false;
+        fetchLeads();
+      } catch (err) {
+        btn.innerText = "Verify & Re-sync";
+        btn.disabled = false;
+        alert("Failed to sync database. Please check connection string.");
+      }
+    }
+
+    /* Toast Notification */
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      t.style.display = 'flex';
+      setTimeout(() => { t.style.display = 'none'; }, 3200);
+    }
+
+    /* ========================================================
+       FEATURE 1: SMART FOLLOW-UP ENGINE & ACTIONS QUEUE
+       ======================================================== */
+    let followUpData = { overdue: [], due_today: [], upcoming: [], recent: [], total_actionable: 0 };
+    let activeFollowUpBucket = 'all';
+
+    async function loadFollowUps() {
+      try {
+        const res = await fetch('/api/prospects/follow-ups');
+        if (!res.ok) return;
+        followUpData = await res.json();
+
+        const countOverdue = document.getElementById('actionCountOverdue');
+        const countDueToday = document.getElementById('actionCountDueToday');
+        const countUpcoming = document.getElementById('actionCountUpcoming');
+        const blastCount = document.getElementById('blastFollowUpCount');
+
+        if (countOverdue) countOverdue.innerText = followUpData.overdue.length;
+        if (countDueToday) countDueToday.innerText = followUpData.due_today.length;
+        if (countUpcoming) countUpcoming.innerText = followUpData.upcoming.length;
+
+        const totalBlast = followUpData.overdue.length + followUpData.due_today.length;
+        if (blastCount) blastCount.innerText = totalBlast;
+
+        const badge = document.getElementById('followUpPanelBadge');
+        if (badge) badge.innerText = `${followUpData.total_actionable} Actionable`;
+      } catch (err) {
+        console.error("Failed to load follow-ups:", err);
+      }
+    }
+
+    function toggleFollowUpPanel(bucket = null) {
+      const panel = document.getElementById('followUpPanel');
+      if (!panel) return;
+
+      if (bucket === null) {
+        panel.classList.toggle('open');
+        return;
+      }
+
+      activeFollowUpBucket = bucket;
+      renderFollowUpList();
+      panel.classList.add('open');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function renderFollowUpList() {
+      const listEl = document.getElementById('followUpList');
+      const titleEl = document.getElementById('followUpPanelTitle');
+      const iconEl = document.getElementById('followUpPanelIcon');
+      if (!listEl) return;
+
+      let items = [];
+      if (activeFollowUpBucket === 'overdue') {
+        items = followUpData.overdue;
+        if (titleEl) titleEl.innerText = "Overdue Follow-Ups (>3-5 days since initial pitch)";
+        if (iconEl) iconEl.innerText = "🔴";
+      } else if (activeFollowUpBucket === 'due_today') {
+        items = followUpData.due_today;
+        if (titleEl) titleEl.innerText = "Follow-Ups Due Today (Prime engagement window)";
+        if (iconEl) iconEl.innerText = "🟡";
+      } else if (activeFollowUpBucket === 'upcoming') {
+        items = followUpData.upcoming;
+        if (titleEl) titleEl.innerText = "Upcoming Follow-Ups (Next 1-2 days)";
+        if (iconEl) iconEl.innerText = "🔵";
+      } else {
+        items = [...followUpData.overdue, ...followUpData.due_today];
+        if (titleEl) titleEl.innerText = "Active Follow-Up Action Queue";
+        if (iconEl) iconEl.innerText = "⏰";
+      }
+
+      if (!items || items.length === 0) {
+        listEl.innerHTML = `
+          <div style="padding: 28px 16px; text-align: center; color: var(--text-secondary);">
+            <div style="font-size: 1.8rem; margin-bottom: 6px;">✨</div>
+            <strong style="color: var(--text); font-size: 0.9rem;">No clients in this follow-up queue!</strong>
+            <div style="font-size: 0.74rem; color: var(--text-tertiary); margin-top: 4px;">All clients in this bucket are up to date.</div>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = items.map(lead => {
+        const cleanPhone = formatWhatsAppPhone(lead.phone);
+        const msg = lead.follow_up_message || `Hi ${lead.owner || 'there'}! Following up on my note regarding 24/7 AI lead capture for ${lead.business}. Mind if I send a 60-second interactive demo?`;
+        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+        const daysText = lead.days_since_contact !== null ? `${lead.days_since_contact}d ago` : 'recently';
+        const urgencyClass = (lead.days_since_contact > 5) ? 'urgent' : (lead.days_since_contact >= 3 ? 'warning' : 'normal');
+
+        return `
+          <div class="followup-item" id="fuItem_${lead.id}">
+            <div class="followup-urgency ${urgencyClass}" title="Urgency level"></div>
+            <div class="followup-info">
+              <div class="followup-biz">
+                ${escapeHtml(lead.business)}
+                <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-tertiary); font-weight: normal; margin-left: 6px;">${escapeHtml(lead.phone)}</span>
+                <span class="kpi-badge" style="font-size: 0.64rem; padding: 1px 6px; margin-left: 6px;">🕒 Pitched ${daysText}</span>
+              </div>
+              <div class="followup-meta">
+                👤 ${escapeHtml(lead.owner || 'Owner')} • 📍 ${escapeHtml(lead.location || 'Local')}
+              </div>
+              <div style="font-size: 0.71rem; color: var(--text-tertiary); margin-top: 4px; background: var(--bg); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-subtle); line-height: 1.35;">
+                💬 <em>"${escapeHtml(msg)}"</em>
+              </div>
+            </div>
+            <div class="followup-actions">
+              <button class="btn-quick-reply" onclick="quickLogReply('${lead.id}', event)" title="1-Tap: Mark as Replied!">
+                💬 Got Reply
+              </button>
+              <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-wa-blast btn-xs" style="text-decoration: none;" onclick="recordFollowUpSent('${lead.id}')" title="Send 2nd-touch WhatsApp follow-up">
+                ⚡ Follow-Up ↗
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function recordFollowUpSent(leadId) {
+      const now = new Date();
+      const nowStr = now.toLocaleDateString('en-IN', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      const lead = allLeads.find(l => l.id === leadId);
+      if (lead) {
+        lead.last_contacted = nowStr;
+        updateDashboardMetrics();
+      }
+      try {
+        await fetch('/api/prospects/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: leadId, last_contacted: nowStr })
+        });
+        loadFollowUps();
+      } catch (e) {}
+    }
+
+    async function blastFollowUps() {
+      const actionable = [...followUpData.overdue, ...followUpData.due_today];
+      if (!actionable.length) {
+        showToast("ℹ️ No follow-ups currently due or overdue!");
+        return;
+      }
+      if (!confirm(`⚡ Send tailored WhatsApp follow-up messages to all ${actionable.length} actionable clients?`)) {
+        return;
+      }
+      let count = 0;
+      for (const lead of actionable) {
+        const cleanPhone = formatWhatsAppPhone(lead.phone);
+        const msg = lead.follow_up_message || `Hi ${lead.owner}! Following up on my note regarding 24/7 AI lead capture for ${lead.business}. Mind if I send a 60-second interactive demo?`;
+        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+        await recordFollowUpSent(lead.id);
+        count++;
+        await new Promise(r => setTimeout(r, 450));
+      }
+      showToast(`🚀 Dispatched follow-ups to ${count} clients!`);
+      loadFollowUps();
+    }
+
+    /* ========================================================
+       FEATURE 2: QUICK REPLY LOGGER
+       ======================================================== */
+    async function quickLogReply(leadId, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+
+      const note = prompt(`💬 Log client reply from ${lead.business}:\n(Enter brief note or leave blank for 'Client replied on WhatsApp')`, "Client replied on WhatsApp");
+      if (note === null) return;
+
+      const replyNote = note.trim() || "Client replied on WhatsApp";
+
+      lead.has_replied = true;
+      lead.stage = 'REPLIED';
+      lead.reply_notes = replyNote;
+      updateDashboardMetrics();
+      applyFilters();
+      showToast(`🎉 Logged reply from ${lead.business}! Advanced to Replied.`);
+
+      try {
+        await fetch('/api/prospects/quick-reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: lead.id, reply_note: replyNote })
+        });
+        loadStats();
+        loadFollowUps();
+        loadAnalytics();
+      } catch (err) {
+        console.error("Quick reply error:", err);
+      }
+    }
+
+    /* ========================================================
+       FEATURE 3: NICHE PERFORMANCE ANALYTICS
+       ======================================================== */
+    let analyticsData = null;
+
+    async function loadAnalytics() {
+      try {
+        const res = await fetch('/api/prospects/analytics');
+        if (!res.ok) return;
+        analyticsData = await res.json();
+        const nicheCountEl = document.getElementById('actionCountNiches');
+        if (nicheCountEl && analyticsData.categories) {
+          nicheCountEl.innerText = analyticsData.categories.length;
+        }
+      } catch (err) {
+        console.error("Failed to load analytics:", err);
+      }
+    }
+
+    function toggleAnalyticsPanel() {
+      const panel = document.getElementById('analyticsPanel');
+      if (!panel) return;
+
+      const isOpen = panel.classList.contains('open');
+      if (isOpen) {
+        panel.classList.remove('open');
+      } else {
+        renderAnalyticsGrid();
+        panel.classList.add('open');
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function renderAnalyticsGrid() {
+      const grid = document.getElementById('analyticsGrid');
+      if (!grid || !analyticsData || !analyticsData.categories) return;
+
+      const icons = {
+        "Dental": "🦷",
+        "Aesthetic & Dermatology": "✨",
+        "Interior Design": "🛋️",
+        "Real Estate": "🏢",
+        "Salon & Grooming": "✂️",
+        "Other": "💼"
+      };
+
+      grid.innerHTML = analyticsData.categories.map(cat => {
+        const icon = icons[cat.category] || "💼";
+        const replyPct = cat.reply_rate || 0;
+        const total = cat.total || 1;
+        const sentPct = Math.round((cat.pitched / total) * 100);
+        const repPct = Math.round((cat.replied / total) * 100);
+        const wonPct = Math.round((cat.closed_won / total) * 100);
+
+        return `
+          <div class="analytics-card">
+            <div class="analytics-card-title">
+              <span>${icon}</span>
+              <span style="flex: 1;">${cat.category}</span>
+              <span class="kpi-badge badge-green">${replyPct}% Reply</span>
+            </div>
+            <div class="analytics-funnel">
+              <div class="funnel-row">
+                <span class="funnel-label">Total Leads</span>
+                <div class="funnel-bar-track">
+                  <div class="funnel-bar-fill" style="width: 100%; background: var(--text-tertiary);"></div>
+                </div>
+                <span class="funnel-count">${cat.total}</span>
+              </div>
+              <div class="funnel-row">
+                <span class="funnel-label">Pitched</span>
+                <div class="funnel-bar-track">
+                  <div class="funnel-bar-fill" style="width: ${sentPct}%; background: #25D366;"></div>
+                </div>
+                <span class="funnel-count">${cat.pitched}</span>
+              </div>
+              <div class="funnel-row">
+                <span class="funnel-label">Replied</span>
+                <div class="funnel-bar-track">
+                  <div class="funnel-bar-fill" style="width: ${repPct}%; background: var(--sage-green);"></div>
+                </div>
+                <span class="funnel-count">${cat.replied}</span>
+              </div>
+              <div class="funnel-row">
+                <span class="funnel-label">Closed Won</span>
+                <div class="funnel-bar-track">
+                  <div class="funnel-bar-fill" style="width: ${wonPct}%; background: var(--amber-warm);"></div>
+                </div>
+                <span class="funnel-count">${cat.closed_won}</span>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-size: 0.72rem;">
+              <span style="color: var(--text-secondary);">Won: <strong style="color: var(--terracotta);">₹${(cat.revenue || 0).toLocaleString('en-IN')}</strong></span>
+              <span style="color: var(--text-secondary);">Pipeline: <strong style="color: var(--text);">₹${(cat.pipeline_value || 0).toLocaleString('en-IN')}</strong></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ========================================================
+       FEATURE 4: GOOGLE MAPS & RAW INFO QUICK-PARSER
+       ======================================================== */
+    async function parseAndAutoFillLead() {
+      const input = document.getElementById('gmapsRawInput');
+      const btn = document.getElementById('btnAutoFill');
+      if (!input || !input.value.trim()) {
+        showToast("⚠️ Paste some business info or Google Maps text first");
+        return;
+      }
+      const rawText = input.value.trim();
+      if (btn) { btn.disabled = true; btn.innerText = "⏳ Parsing..."; }
+
+      try {
+        const res = await fetch('/api/prospects/parse-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: rawText })
+        });
+        const data = await res.json();
+        if (data.status === 'success' && data.extracted) {
+          const ex = data.extracted;
+          if (ex.business) document.getElementById('newLeadBusiness').value = ex.business;
+          if (ex.owner) document.getElementById('newLeadOwner').value = ex.owner;
+          if (ex.phone) document.getElementById('newLeadPhone').value = ex.phone;
+          if (ex.website) document.getElementById('newLeadWebsite').value = ex.website;
+          if (ex.niche) document.getElementById('newLeadNiche').value = ex.niche;
+          if (ex.location) document.getElementById('newLeadLocation').value = ex.location;
+          if (ex.weakness) document.getElementById('newLeadWeakness').value = ex.weakness;
+          if (ex.pitch) document.getElementById('newLeadPitch').value = ex.pitch;
+
+          showToast("✨ Auto-filled clinic details! Review and click Save.");
+        } else {
+          showToast("⚠️ Couldn't auto-parse text. Please fill manually.");
+        }
+      } catch (err) {
+        console.error("Parse error:", err);
+        showToast("⚠️ Failed to parse info");
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "⚡ Auto-Fill"; }
+      }
+    }
+
+    // Initialize application on load
+    initTheme();
+    fetchLeads();
+  </script>
+</body>
+</html>

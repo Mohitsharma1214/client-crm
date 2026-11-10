@@ -1,0 +1,766 @@
+import os
+import json
+import time
+import re
+from datetime import datetime, timedelta
+from starlette.applications import Starlette
+from starlette.responses import JSONResponse as BaseJSONResponse, HTMLResponse
+from starlette.routing import Route, Mount
+from starlette.staticfiles import StaticFiles
+import httpx
+import uvicorn
+
+class JSONResponse(BaseJSONResponse):
+    def render(self, content) -> bytes:
+        return json.dumps(
+            content,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=None,
+            separators=(",", ":"),
+            default=str
+        ).encode("utf-8")
+
+PROSPECTS_FILE = "data/prospects.json"
+
+NICHE_PERSONAS = {
+    "clinic": {
+        "title": "Dr. Smile Dental & Skin Clinic",
+        "role": "Clinic AI Receptionist",
+        "greeting": "Hello! Welcome to Dr. Smile Clinic. I am Maya, your AI booking assistant. Are you looking to book a doctor consultation, check treatment pricing, or ask about our clinic hours?",
+        "faq": {
+            "doctor": "Dr. Ananya Sharma (MDS, 12+ years experience) is available Mon-Sat from 10 AM to 7 PM.",
+            "price": "General consultation is ₹500. Dental scaling starts at ₹1,200, Root Canal Treatment at ₹4,500, and Skin treatments from ₹2,000.",
+            "book": "I can schedule that right now! Which day works best for you: Tomorrow morning (11 AM) or afternoon (3 PM)?",
+            "time": "We are open Monday to Saturday from 9:30 AM to 8:00 PM."
+        }
+    },
+    "realestate": {
+        "title": "Apex Luxury Real Estate",
+        "role": "Property Sales Concierge",
+        "greeting": "Hi there! I am Alex from Apex Realty. Are you looking to buy, sell, or invest in 2BHK/3BHK luxury apartments in the city?",
+        "faq": {
+            "budget": "Our premium residential projects range from ₹65 Lakhs for 2BHK to ₹1.8 Crores for 3BHK duplexes. What is your preferred budget range?",
+            "visit": "We organize private site walkthroughs every day between 10 AM and 5 PM with complimentary pickup. What day would you like to visit?",
+            "location": "Our top projects are located in prime central corridors, within 5 minutes of the Metro and top IT parks.",
+            "amenities": "All properties include infinity pool, clubhouse, 24/7 security, EV charging, and 80% open green space."
+        }
+    },
+    "gym": {
+        "title": "IronFit Performance Gym",
+        "role": "Gym Membership Assistant",
+        "greeting": "Hey! Welcome to IronFit. I am your 24/7 fitness concierge. Want to claim a free 1-day guest pass or check our membership plans?",
+        "faq": {
+            "pass": "Awesome! I have registered your 1-Day Free Trial Pass. What time would you like to come in today: morning or evening?",
+            "price": "Our standard membership is ₹1,800/month, or ₹14,000 for the full year (saving 35%). All plans include sauna, cardio, and weights.",
+            "trainer": "Yes! Certified personal training starts at ₹5,000/month with custom macro nutrition planning and body composition tracking.",
+            "hours": "We are open 6:00 AM to 10:30 PM, Monday through Saturday, and 8 AM to 2 PM on Sundays."
+        }
+    }
+}
+
+import db
+
+# Initialize Neon DB if connection string is present
+db.init_db()
+
+async def homepage(request):
+    html_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(html_path):
+        with open(html_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+    return HTMLResponse("<h1>Client Acquisition & AI Demo Hub</h1>")
+
+async def chat_demo(request):
+    """Simulates real-time AI customer conversation for target niche."""
+    data = await request.json()
+    niche = data.get("niche", "clinic")
+    message = data.get("message", "").lower()
+    history = data.get("history", [])
+
+    persona = NICHE_PERSONAS.get(niche, NICHE_PERSONAS["clinic"])
+    faq = persona["faq"]
+
+    # Match common conversational intents
+    reply = ""
+    if any(w in message for w in ["price", "cost", "fee", "rate", "how much", "charges"]):
+        reply = faq.get("price", "Our pricing is customized to the scope. Would you like a breakdown?")
+    elif any(w in message for w in ["doctor", "specialist", "trainer", "who", "trainer"]):
+        reply = faq.get("doctor", faq.get("trainer", "Our experts are certified with over 10 years experience."))
+    elif any(w in message for w in ["book", "appointment", "visit", "trial", "pass", "schedule"]):
+        reply = faq.get("book", faq.get("visit", faq.get("pass", "I would be happy to schedule this! What date works best?")))
+    elif any(w in message for w in ["time", "hours", "open", "timing", "when"]):
+        reply = faq.get("time", faq.get("hours", "We are open Monday to Saturday."))
+    elif any(w in message for w in ["hi", "hello", "hey"]):
+        reply = persona["greeting"]
+    else:
+        reply = f"Got it! I can definitely help with that. To confirm your details and send you full photos and brochure, could you share your WhatsApp number or preferred time?"
+
+    return JSONResponse({
+        "reply": reply,
+        "niche": niche,
+        "role": persona["role"],
+        "business": persona["title"]
+    })
+
+async def generate_audit_and_pitch(request):
+    """Analyzes a prospect's business and generates customized cold outreach pitch scripts."""
+    data = await request.json()
+    business = data.get("business_name", "Target Business").strip()
+    owner = data.get("owner_name", "Founder").strip()
+    website = data.get("website_url", "").strip()
+    niche = data.get("niche", "Dental / Healthcare")
+    city = data.get("city", "Local Market")
+
+    # Clean URL
+    clean_url = website
+    if clean_url and not clean_url.startswith("http"):
+        clean_url = "https://" + clean_url
+
+    # Check website status if provided
+    website_status = "Not checked"
+    has_https = False
+    load_time_sec = 0.8
+    if clean_url:
+        try:
+            async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as client:
+                t0 = time.time()
+                res = await client.get(clean_url)
+                load_time_sec = round(time.time() - t0, 2)
+                website_status = f"Live (HTTP {res.status_code})"
+                has_https = str(res.url).startswith("https")
+        except Exception as e:
+            website_status = "Slow or unreachable"
+
+    # 1. 2-Minute Video / Loom Script
+    video_script = f"""[0:00 - 0:20] Hook:
+"Hey {owner}, Mohit here! I was researching top {niche} businesses in {city} and came across {business}. You have a great reputation, but I noticed two quick things on your website ({website or 'current site'}) that are quietly costing you clients every week."
+
+[0:20 - 0:50] The Problem:
+"First, when someone visits after 7 PM or on weekends, there's no way for them to get an instant answer or book an appointment on WhatsApp. In this industry, over 35% of people browse at night and leave for a competitor if they don't get an immediate reply."
+
+[0:50 - 1:30] The Solution & Demo:
+"I actually took 20 minutes to build a quick demo of how an automated 24/7 AI Receptionist would work specifically for {business}. It answers questions about pricing and doctor availability, and books appointments directly to your phone."
+
+[1:30 - 2:00] No-Brainer Call to Action:
+"I would love to set this up on your site for 14 days completely free. If it brings you new paying clients, we can talk about a simple setup fee. If not, it costs you nothing. Let me know if you'd like me to send the 1-minute demo link over WhatsApp!"
+"""
+
+    # 2. WhatsApp Direct Message (Short, informal, ultra-high reply rate)
+    whatsapp_pitch = f"""Hi {owner}! Saw your work at {business} in {city} — really impressive setup.
+
+Quick question: how do you guys currently handle inquiries that come in after hours or on weekends? 
+
+I build automated 24/7 AI booking assistants for {niche} businesses that capture client inquiries on WhatsApp and schedule appointments while you sleep.
+
+I put together a 60-second interactive demo for {business}. Mind if I share the link here? (Zero pitch, just thought you'd find it cool!)"""
+
+    # 3. Cold Email Template
+    email_pitch = f"""Subject: Quick idea for {business} (leads after hours)
+
+Hi {owner},
+
+I was looking at {business} and noticed you guys have great client reviews in {city}.
+
+One quick thing caught my eye: your website currently doesn't have an instant WhatsApp or AI booking option. Most {niche} businesses lose up to 40% of their prospective inquiries because people search after hours when staff isn't available to answer calls.
+
+I built a lightweight 24/7 AI booking agent that automatically answers client questions (pricing, availability, services) and qualifies appointments directly to your phone.
+
+Would you be open to checking out a 60-second interactive demo I mocked up for {business}? 
+
+Best regards,
+Mohit Sharma
+Founder, Mohit AI & Web Studio
+WhatsApp / Call: +91-XXXXXXXXXX
+"""
+
+    # 4. Pricing & Proposal Tiers
+    proposal = {
+        "starter": {
+            "name": "AI Lead Capture & WhatsApp Bot",
+            "setup_fee": "₹14,999 ($180)",
+            "monthly_maintenance": "₹2,499/mo ($30)",
+            "deliverables": [
+                "24/7 Custom AI chatbot trained on business FAQs & pricing",
+                "Instant WhatsApp lead notification to owner's phone",
+                "Google Calendar appointment booking integration",
+                "Mobile-responsive chat widget on current website",
+                "14-Day 100% money-back satisfaction guarantee"
+            ]
+        },
+        "growth": {
+            "name": "Full Modern Website Revamp + AI Agent",
+            "setup_fee": "₹29,999 ($360)",
+            "monthly_maintenance": "₹3,999/mo ($50)",
+            "deliverables": [
+                "Sub-1-second high-speed modern website (Next.js / React)",
+                "Full SEO optimization & Google Business Profile boost",
+                "Embedded AI Assistant with automated lead capture",
+                "Automated review collection system on WhatsApp",
+                "Dedicated monthly maintenance, backups & hosting"
+            ]
+        }
+    }
+
+    return JSONResponse({
+        "business": business,
+        "owner": owner,
+        "website_status": website_status,
+        "load_time_sec": load_time_sec,
+        "video_script": video_script,
+        "whatsapp_pitch": whatsapp_pitch,
+        "email_pitch": email_pitch,
+        "proposal": proposal
+    })
+
+async def get_prospects(request):
+    return JSONResponse(db.get_all_prospects())
+
+async def add_prospect(request):
+    data = await request.json()
+    entry = db.add_new_prospect(data)
+    return JSONResponse({"status": "success", "prospect": entry})
+
+async def update_prospect_stage(request):
+    data = await request.json()
+    prospect_id = data.get("id")
+    new_stage = data.get("stage")
+    notes = data.get("notes")
+    
+    updates = {"stage": new_stage}
+    if notes is not None:
+        updates["notes"] = notes
+    if new_stage in ["REPLIED", "DEMO_SHARED", "CALL_BOOKED", "CLOSED_WON"]:
+        updates["has_replied"] = True
+
+    updated = db.update_existing_prospect(prospect_id, updates)
+    return JSONResponse({"status": "updated", "prospect": updated})
+
+async def update_prospect(request):
+    data = await request.json()
+    prospect_id = data.get("id")
+    if not prospect_id:
+        return JSONResponse({"status": "error", "message": "Missing prospect id"}, status_code=400)
+    
+    if data.get("stage") in ["REPLIED", "DEMO_SHARED", "CALL_BOOKED", "CLOSED_WON"]:
+        data["has_replied"] = True
+
+    updated = db.update_existing_prospect(prospect_id, data)
+    return JSONResponse({"status": "updated", "prospect": updated})
+
+async def delete_prospect(request):
+    data = await request.json()
+    prospect_id = data.get("id")
+    db.delete_existing_prospect(prospect_id)
+    return JSONResponse({"status": "deleted"})
+
+async def bulk_pitch_unsent(request):
+    """Marks all unsent prospects as PITCH_SENT in Neon DB with live timestamps."""
+    data = {}
+    try:
+        data = await request.json()
+    except Exception:
+        pass
+    lead_ids = data.get("ids")
+    now_str = datetime.now().strftime("%b %d, %I:%M %p")
+    
+    leads = db.get_all_prospects()
+    unsent_leads = [
+        l for l in leads
+        if (lead_ids is None or l["id"] in lead_ids) and
+        l.get("stage") in ["PITCH_READY", "RESEARCHED", None, ""] and
+        not l.get("has_replied")
+    ]
+    
+    updated_records = []
+    for l in unsent_leads:
+        up = db.update_existing_prospect(l["id"], {
+            "stage": "PITCH_SENT",
+            "last_contacted": now_str
+        })
+        if up:
+            updated_records.append(up)
+            
+    return JSONResponse({
+        "status": "success",
+        "updated_count": len(updated_records),
+        "timestamp": now_str,
+        "records": updated_records
+    })
+
+async def get_stats(request):
+    prospects = db.get_all_prospects()
+    total = len(prospects)
+    sent = len([p for p in prospects if p.get("stage") in ["PITCH_SENT", "REPLIED", "DEMO_SHARED", "CALL_BOOKED", "CLOSED_WON", "LOST"]])
+    replied = len([p for p in prospects if p.get("has_replied") or p.get("stage") in ["REPLIED", "DEMO_SHARED", "CALL_BOOKED", "CLOSED_WON"]])
+    demo_or_call = len([p for p in prospects if p.get("stage") in ["DEMO_SHARED", "CALL_BOOKED"]])
+    closed_won = len([p for p in prospects if p.get("stage") == "CLOSED_WON"])
+    revenue = sum(int(p.get("deal_value", 29999)) for p in prospects if p.get("stage") == "CLOSED_WON")
+    pipeline_value = sum(int(p.get("deal_value", 29999)) for p in prospects if p.get("stage") in ["REPLIED", "DEMO_SHARED", "CALL_BOOKED"])
+    
+    reply_rate = round((replied / sent * 100), 1) if sent > 0 else 0
+
+    return JSONResponse({
+        "total": total,
+        "sent": sent,
+        "replied": replied,
+        "reply_rate": reply_rate,
+        "demo_or_call": demo_or_call,
+        "closed_won": closed_won,
+        "revenue": revenue,
+        "pipeline_value": pipeline_value,
+        "db_connected": db.is_db_connected()
+    })
+
+async def connect_database(request):
+    data = await request.json()
+    url = data.get("database_url", "").strip()
+    if not url:
+        return JSONResponse({"status": "error", "message": "No database URL provided"}, status_code=400)
+    
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    lines = []
+    found = False
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("DATABASE_URL="):
+                    lines.append(f"DATABASE_URL={url}\n")
+                    found = True
+                else:
+                    lines.append(line)
+    if not found:
+        lines.append(f"DATABASE_URL={url}\n")
+    with open(env_path, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+    
+    os.environ["DATABASE_URL"] = url
+    db.DATABASE_URL = url
+    success = db.init_db()
+    
+    if success:
+        return JSONResponse({
+            "status": "success",
+            "message": "Connected to Neon PostgreSQL and synchronized prospects!",
+            "count": len(db.get_all_prospects())
+        })
+    else:
+        return JSONResponse({"status": "error", "message": "Failed to connect to PostgreSQL with provided URL."}, status_code=400)
+
+async def neon_auth_status(request):
+    jwks_url = os.getenv("NEON_AUTH_JWKS_URL", "")
+    base_url = os.getenv("NEON_AUTH_BASE_URL", "")
+    status = "not_configured"
+    keys_count = 0
+    if jwks_url:
+        try:
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                res = await client.get(jwks_url)
+                if res.status_code == 200:
+                    status = "active"
+                    keys_count = len(res.json().get("keys", []))
+                else:
+                    status = f"HTTP {res.status_code}"
+        except Exception as e:
+            status = f"error: {e}"
+    return JSONResponse({
+        "service": "Neon Auth",
+        "status": status,
+        "base_url": base_url,
+        "jwks_url": jwks_url,
+        "keys_count": keys_count
+    })
+
+async def neon_function_status(request):
+    branch_id = os.getenv("NEON_BRANCH_ID", "")
+    host_suffix = os.getenv("NEON_FUNCTION_HOST_SUFFIX", "")
+    func_url = f"https://{branch_id}-hello{host_suffix}/"
+    result = "unreachable"
+    status_code = 500
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            res = await client.get(func_url)
+            status_code = res.status_code
+            result = res.text
+    except Exception as e:
+        result = f"error: {e}"
+    return JSONResponse({
+        "service": "Neon Functions",
+        "function": "hello",
+        "url": func_url,
+        "status_code": status_code,
+        "output": result
+    })
+
+async def neon_ai_gateway_status(request):
+    base_url = os.getenv("NEON_AI_GATEWAY_BASE_URL", "")
+    token = os.getenv("NEON_AI_GATEWAY_TOKEN", "")
+    status = "configured"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            headers = {"Authorization": f"Bearer {token}"} if token else {}
+            res = await client.get(f"{base_url}/v1/models", headers=headers)
+            status = f"HTTP {res.status_code}"
+    except Exception as e:
+        status = f"error: {e}"
+    return JSONResponse({
+        "service": "Neon AI Gateway",
+        "base_url": base_url,
+        "token_configured": bool(token),
+        "status": status
+    })
+
+async def neon_realtime_status(request):
+    rt_url = os.getenv("NEON_REALTIME_URL", "")
+    has_secret = bool(os.getenv("NEON_REALTIME_SECRET"))
+    return JSONResponse({
+        "service": "Neon Realtime",
+        "url": rt_url,
+        "secret_configured": has_secret,
+        "status": "active" if (rt_url and has_secret) else "pending"
+    })
+
+async def neon_all_health(request):
+    prospects = db.get_all_prospects()
+    db_ok = db.is_db_connected()
+    
+    # Check functions
+    branch_id = os.getenv("NEON_BRANCH_ID", "")
+    host_suffix = os.getenv("NEON_FUNCTION_HOST_SUFFIX", "")
+    func_url = f"https://{branch_id}-hello{host_suffix}/"
+    func_ok = False
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(func_url)
+            func_ok = (r.status_code == 200)
+    except Exception:
+        pass
+    
+    return JSONResponse({
+        "status": "healthy",
+        "branch": os.getenv("NEON_BRANCH", "production"),
+        "services": {
+            "postgres": { "status": "active" if db_ok else "offline", "prospects_count": len(prospects) },
+            "auth": { "status": "active", "base_url": os.getenv("NEON_AUTH_BASE_URL") },
+            "functions": { "status": "active" if func_ok else "unreachable", "url": func_url },
+            "ai_gateway": { "status": "active", "base_url": os.getenv("NEON_AI_GATEWAY_BASE_URL") },
+            "realtime": { "status": "active", "url": os.getenv("NEON_REALTIME_URL") }
+        }
+    })
+
+async def demo_page(request):
+    demo_path = os.path.join(os.path.dirname(__file__), "demo-site", "index.html")
+    if os.path.exists(demo_path):
+        with open(demo_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+    return HTMLResponse("<h1>Demo page not found</h1>")
+
+def _parse_contact_date(raw):
+    """Parse various last_contacted timestamp formats into a datetime."""
+    now = datetime.now()
+    for fmt in (
+        "%b %d, %I:%M %p",   # "Nov 09, 09:55 PM"
+        "%b %d, %I:%M %p",   # same with zero-padded day handled by strptime
+        "%d %b, %I:%M %p",   # "9 Nov, 09:59 PM"
+        "%d %b, %I:%M %p",   # lowercase handled below
+        "%b %d, %Y %I:%M %p",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d",
+    ):
+        try:
+            dt = datetime.strptime(raw.strip(), fmt)
+            # Formats without a year default to 1900; assume current year
+            if dt.year == 1900:
+                dt = dt.replace(year=now.year)
+            return dt
+        except ValueError:
+            continue
+    # Try case-insensitive variants
+    for fmt in ("%b %d, %I:%M %p", "%d %b, %I:%M %p"):
+        try:
+            dt = datetime.strptime(raw.strip().title(), fmt)
+            if dt.year == 1900:
+                dt = dt.replace(year=now.year)
+            return dt
+        except ValueError:
+            continue
+    return None
+
+
+NICHE_CATEGORIES = {
+    "Dental": ["dental", "dentistry", "implant", "endodontics", "invisalign", "oral", "orthodont"],
+    "Aesthetic & Dermatology": ["aesthetic", "dermatology", "skin", "cosmetic", "botox", "laser", "derma"],
+    "Interior Design": ["interior", "design", "architect", "decor", "furnish"],
+    "Real Estate": ["real estate", "realty", "property", "broker", "housing"],
+    "Salon & Grooming": ["salon", "grooming", "barber", "spa", "beauty", "hair", "nail"],
+}
+
+
+def _categorize_niche(niche_str):
+    """Map a prospect niche string to a broad category."""
+    lower = (niche_str or "").lower()
+    for category, keywords in NICHE_CATEGORIES.items():
+        if any(kw in lower for kw in keywords):
+            return category
+    return "Other"
+
+
+async def get_follow_ups(request):
+    """Smart Follow-Up Engine – groups PITCH_SENT prospects by urgency."""
+    now = datetime.now()
+    today = now.date()
+    prospects = db.get_all_prospects()
+
+    buckets = {"overdue": [], "due_today": [], "upcoming": [], "recent": []}
+
+    for p in prospects:
+        dominated = False
+
+        # Check explicit follow_up_date first
+        fud = p.get("follow_up_date")
+        if fud:
+            try:
+                fu_date = datetime.strptime(str(fud).strip()[:10], "%Y-%m-%d").date()
+                if fu_date <= today:
+                    dominated = True
+            except ValueError:
+                pass
+
+        is_pitch_no_reply = p.get("stage") == "PITCH_SENT" and not p.get("has_replied")
+        if not is_pitch_no_reply and not dominated:
+            continue
+
+        # Calculate days since contact
+        lc = p.get("last_contacted")
+        days_since = None
+        if lc:
+            dt = _parse_contact_date(str(lc))
+            if dt:
+                delta = now - dt
+                days_since = round(delta.total_seconds() / 86400, 1)
+
+        # Build follow-up message
+        owner = p.get("owner_name") or p.get("owner") or "there"
+        business = p.get("business_name") or p.get("business") or "your business"
+        days_label = f"{int(days_since)}" if days_since is not None else "a few"
+        follow_up_msg = (
+            f"Hi {owner}! Just following up on my message from {days_label} days ago "
+            f"about an AI booking assistant for {business}. "
+            f"Would love to show you a quick 60-sec demo — completely free, no strings. 🙏"
+        )
+
+        enriched = {**p, "days_since_contact": days_since, "follow_up_message": follow_up_msg}
+
+        # If dominated by follow_up_date, always overdue
+        if dominated and (days_since is None or not is_pitch_no_reply):
+            buckets["overdue"].append(enriched)
+            continue
+
+        if days_since is None:
+            buckets["upcoming"].append(enriched)
+        elif days_since > 5:
+            buckets["overdue"].append(enriched)
+        elif days_since >= 3:
+            buckets["due_today"].append(enriched)
+        elif days_since >= 1:
+            buckets["upcoming"].append(enriched)
+        else:
+            buckets["recent"].append(enriched)
+
+    total_actionable = len(buckets["overdue"]) + len(buckets["due_today"])
+
+    return JSONResponse({
+        "overdue": buckets["overdue"],
+        "due_today": buckets["due_today"],
+        "upcoming": buckets["upcoming"],
+        "recent": buckets["recent"],
+        "total_actionable": total_actionable,
+    })
+
+
+async def quick_reply(request):
+    """Quick Reply Logger – marks a prospect as replied."""
+    data = await request.json()
+    prospect_id = data.get("id")
+    if not prospect_id:
+        return JSONResponse({"status": "error", "message": "Missing prospect id"}, status_code=400)
+
+    reply_note = data.get("reply_note") or "Client replied"
+    updates = {
+        "has_replied": True,
+        "stage": "REPLIED",
+        "reply_notes": reply_note,
+    }
+    updated = db.update_existing_prospect(prospect_id, updates)
+    return JSONResponse({"status": "updated", "prospect": updated})
+
+
+async def get_analytics(request):
+    """Niche Performance Analytics – conversion funnel stats by niche category."""
+    prospects = db.get_all_prospects()
+
+    cats = {}
+    for p in prospects:
+        cat = _categorize_niche(p.get("niche", ""))
+        if cat not in cats:
+            cats[cat] = {"category": cat, "total": 0, "pitched": 0, "replied": 0,
+                         "in_discussion": 0, "closed_won": 0, "revenue": 0, "pipeline_value": 0}
+
+        c = cats[cat]
+        c["total"] += 1
+        stage = p.get("stage", "")
+        deal_value = int(p.get("deal_value", 29999))
+
+        if stage in ("PITCH_SENT", "REPLIED", "DEMO_SHARED", "CALL_BOOKED", "CLOSED_WON", "LOST"):
+            c["pitched"] += 1
+        if p.get("has_replied") or stage in ("REPLIED", "DEMO_SHARED", "CALL_BOOKED", "CLOSED_WON"):
+            c["replied"] += 1
+        if stage in ("DEMO_SHARED", "CALL_BOOKED"):
+            c["in_discussion"] += 1
+            c["pipeline_value"] += deal_value
+        if stage == "CLOSED_WON":
+            c["closed_won"] += 1
+            c["revenue"] += deal_value
+        if stage in ("REPLIED",):
+            c["pipeline_value"] += deal_value
+
+    # Compute reply_rate per category
+    for c in cats.values():
+        c["reply_rate"] = round((c["replied"] / c["pitched"] * 100), 1) if c["pitched"] > 0 else 0.0
+
+    category_list = sorted(cats.values(), key=lambda x: x["revenue"], reverse=True)
+
+    total_pipeline_value = sum(c["pipeline_value"] for c in category_list)
+    total_revenue = sum(c["revenue"] for c in category_list)
+    best = max(category_list, key=lambda x: x["reply_rate"]) if category_list else None
+    worst = min(category_list, key=lambda x: x["reply_rate"]) if category_list else None
+
+    return JSONResponse({
+        "categories": category_list,
+        "funnel": {
+            "total_pipeline_value": total_pipeline_value,
+            "total_revenue": total_revenue,
+            "best_performing_niche": best["category"] if best else None,
+            "worst_performing_niche": worst["category"] if worst else None,
+        },
+    })
+
+
+async def parse_raw_info(request):
+    """Auto-extracts business info from raw pasted text, Google Maps details, or URLs."""
+    data = await request.json()
+    raw = data.get("text", "").strip()
+    if not raw:
+        return JSONResponse({"status": "error", "message": "No text provided"}, status_code=400)
+
+    extracted = {
+        "business": "",
+        "owner": "",
+        "phone": "",
+        "website": "",
+        "location": "",
+        "niche": "Clinic",
+        "deal_value": 29999,
+        "weakness": "Missing 24/7 instant WhatsApp lead capture on mobile website."
+    }
+
+    # Extract Phone
+    phone_match = re.search(r'(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', raw)
+    if phone_match:
+        extracted["phone"] = phone_match.group(0).strip()
+
+    # Extract Website / URL
+    web_match = re.search(r'(?:https?://)?(?:www\.)?([a-zA-Z0-9-]+\.(?:com|in|org|io|co|net|clinic)[a-zA-Z0-9/_.-]*)', raw, re.IGNORECASE)
+    if web_match:
+        extracted["website"] = web_match.group(1).strip()
+
+    # Extract Doctor / Owner Name
+    owner_match = re.search(r'(?:Dr\.|Dr|Doctor|Prof\.|Architect)\s+([A-Za-z\s&.]+?)(?=\n|,|\(|\-|$)', raw, re.IGNORECASE)
+    if owner_match:
+        extracted["owner"] = owner_match.group(0).strip()
+
+    # Split lines to find business name
+    lines = [l.strip() for l in raw.split("\n") if l.strip()]
+    if lines:
+        first_line = lines[0]
+        first_line = re.sub(r'^(Google Maps|Place|Business|Location):\s*', '', first_line, flags=re.IGNORECASE)
+        # If doctor name was on the first line, clean it from the business title
+        if extracted["owner"] and extracted["owner"] in first_line:
+            b_cand = first_line.split(extracted["owner"])[0].strip().strip("-–•,")
+            if b_cand:
+                first_line = b_cand
+        # If phone was on the same line, clean it
+        if extracted["phone"] and extracted["phone"] in first_line:
+            first_line = first_line.split(extracted["phone"])[0].strip().strip("-–•,")
+        extracted["business"] = first_line[:60].strip()
+
+    # Detect Niche
+    lower_raw = raw.lower()
+    if any(k in lower_raw for k in ["dental", "dentist", "teeth", "implant", "smile"]):
+        extracted["niche"] = "Cosmetic Dentistry & Implants"
+    elif any(k in lower_raw for k in ["derma", "skin", "aesthetic", "laser", "hair", "hydra"]):
+        extracted["niche"] = "Clinical Dermatology & Aesthetics"
+    elif any(k in lower_raw for k in ["interior", "architect", "decor", "home"]):
+        extracted["niche"] = "Luxury Interior Design"
+    elif any(k in lower_raw for k in ["real estate", "realty", "property", "apartment"]):
+        extracted["niche"] = "Luxury Real Estate"
+    elif any(k in lower_raw for k in ["salon", "spa", "grooming", "barber"]):
+        extracted["niche"] = "Luxury Salon & Spa"
+
+    # Detect Location
+    for city in ["Gurugram", "Gurgaon", "Delhi", "South Delhi", "Noida", "Mumbai", "Bengaluru", "Bangalore", "Saket", "DLF", "Golf Course Road", "Indirapuram"]:
+        if city.lower() in lower_raw:
+            extracted["location"] = city
+            break
+
+    b_name = extracted["business"] or "your business"
+    o_name = extracted["owner"] or "there"
+    extracted["pitch"] = f"Hi {o_name}! Admiring your work at {b_name}. Quick question: would you be open to an automated 24/7 AI booking assistant on WhatsApp for your inquiries?"
+
+    return JSONResponse({"status": "success", "extracted": extracted})
+
+
+routes = [
+    Route("/", homepage),
+    Route("/demo", demo_page),
+    Route("/api/chat", chat_demo, methods=["POST"]),
+    Route("/api/audit", generate_audit_and_pitch, methods=["POST"]),
+    Route("/api/prospects", get_prospects, methods=["GET"]),
+    Route("/api/prospects", add_prospect, methods=["POST"]),
+    Route("/api/prospects/stage", update_prospect_stage, methods=["POST"]),
+    Route("/api/prospects/update", update_prospect, methods=["POST"]),
+    Route("/api/prospects/delete", delete_prospect, methods=["POST"]),
+    Route("/api/prospects/bulk-pitch", bulk_pitch_unsent, methods=["POST"]),
+    Route("/api/prospects/stats", get_stats, methods=["GET"]),
+    Route("/api/db/connect", connect_database, methods=["POST"]),
+    Route("/api/neon/health", neon_all_health, methods=["GET"]),
+    Route("/api/neon/auth", neon_auth_status, methods=["GET"]),
+    Route("/api/neon/functions", neon_function_status, methods=["GET"]),
+    Route("/api/neon/ai-gateway", neon_ai_gateway_status, methods=["GET"]),
+    Route("/api/neon/realtime", neon_realtime_status, methods=["GET"]),
+    Route("/api/prospects/follow-ups", get_follow_ups, methods=["GET"]),
+    Route("/api/prospects/quick-reply", quick_reply, methods=["POST"]),
+    Route("/api/prospects/analytics", get_analytics, methods=["GET"]),
+    Route("/api/prospects/parse-info", parse_raw_info, methods=["POST"]),
+    Mount("/static", app=StaticFiles(directory="static"), name="static")
+]
+
+app = Starlette(debug=True, routes=routes)
+
+if __name__ == "__main__":
+    import socket
+    port = 8000
+    for test_port in [8000, 8001, 8080, 8002, 3000, 5000]:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind(('0.0.0.0', test_port))
+            s.close()
+            port = test_port
+            break
+        except Exception:
+            continue
+    print(f"Starting server on port {port}...")
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
+

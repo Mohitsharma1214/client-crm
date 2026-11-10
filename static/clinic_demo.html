@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Healing Touch Dental & Aesthetic Clinic | Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0ea5e9;
+      --primary-dark: #0284c7;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --bg-light: #f8fafc;
+      --white: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    /* Demo Banner */
+    .demo-banner {
+      background: linear-gradient(90deg, #1e293b, #0f172a);
+      color: white;
+      padding: 10px 20px;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .demo-pill {
+      background: #0ea5e9;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+    }
+
+    /* Clinic Header */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 18px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #0369a1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-links { display: flex; gap: 24px; font-weight: 600; font-size: 0.9rem; }
+    .nav-links a { text-decoration: none; color: var(--text-muted); }
+    .nav-links a:hover { color: var(--primary); }
+
+    /* Hero */
+    .hero {
+      padding: 60px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    @media (max-width: 800px) {
+      .hero { grid-template-columns: 1fr; padding: 40px 20px; }
+      .nav-links { display: none; }
+    }
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #0f172a;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    .btn-book {
+      background: var(--primary);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+      cursor: pointer;
+    }
+
+    /* Treatment Cards */
+    .services-sec {
+      padding: 40px 32px 80px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .sec-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--white);
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .card-icon { font-size: 32px; margin-bottom: 12px; }
+    .card h3 { font-size: 1.1rem; margin-bottom: 8px; }
+    .card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
+    .card-price { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
+
+    /* Floating AI Chat Widget */
+    .chat-bubble-launcher {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #0ea5e9;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.5);
+      z-index: 100;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+    .ai-chat-window {
+      display: none;
+      position: fixed;
+      bottom: 96px;
+      right: 24px;
+      width: 360px;
+      height: 500px;
+      background: var(--white);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+      border: 1px solid #e2e8f0;
+      flex-direction: column;
+      z-index: 101;
+      overflow: hidden;
+    }
+    @media (max-width: 480px) {
+      .ai-chat-window {
+        width: 100%;
+        height: 100%;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+      }
+    }
+
+    .ai-header {
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      color: white;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ai-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .ai-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f8fafc;
+    }
+    .msg {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    .msg-bot { background: white; border: 1px solid #e2e8f0; align-self: flex-start; color: #1e293b; }
+    .msg-user { background: #0ea5e9; color: white; align-self: flex-end; }
+    .ai-input-bar {
+      padding: 12px 16px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 8px;
+      background: white;
+    }
+    .ai-input-bar input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .ai-input-bar button {
+      background: #0ea5e9;
+      color: white;
+      border: none;
+      padding: 0 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Demo Notice for Client -->
+  <div class="demo-banner">
+    <div>⚡ <strong>Live Interactive Prototype:</strong> 24/7 AI Clinic Receptionist Demo</div>
+    <span class="demo-pill">Prepared by Mohit Sharma</span>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <span>🦷</span> Healing Touch Dental & Aesthetics
+    </div>
+    <div class="nav-links">
+      <a href="#services">Treatments</a>
+      <a href="#doctors">Specialists</a>
+      <a href="#reviews">Patient Stories</a>
+    </div>
+    <div class="btn-book" onclick="toggleChat()">
+      <span>💬</span> 24/7 AI Booking
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div>
+      <h1>Advanced Dental Care & Facial Aesthetics in Gurugram</h1>
+      <p>Specialized smile makeovers, dental implants, clear aligners, and aesthetic skin care by Dr. Shrey Nandi & Dr. Smriti Nandi.</p>
+      <div style="display: flex; gap: 12px;">
+        <div class="btn-book" onclick="toggleChat()">
+          Ask Questions / Book Appointment
+        </div>
+      </div>
+    </div>
+    <div style="background: white; border-radius: 20px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+      <h3 style="margin-bottom: 12px; color: #0284c7;">📍 Clinic Details</h3>
+      <p style="font-size: 0.85rem; margin-bottom: 8px;"><strong>Sector 45 Center:</strong> Near Market Road, Greenwood City, Gurugram</p>
+      <p style="font-size: 0.85rem; margin-bottom: 8px;"><strong>Palam Vihar Center:</strong> G-72A, opposite Ansal Plaza, Sector 23</p>
+      <p style="font-size: 0.85rem; color: #16a34a; font-weight: 700;">🟢 Open: Mon - Sat 10:30 AM - 8:00 PM</p>
+    </div>
+  </section>
+
+  <!-- Treatments -->
+  <section class="services-sec" id="services">
+    <div class="sec-title">Popular Treatments & Price Estimates</div>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">🦷</div>
+        <h3>Dental Implants</h3>
+        <p>Permanent, natural tooth replacement with international titanium implants.</p>
+        <div class="card-price">Starting from ₹28,000</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">✨</div>
+        <h3>Clear Aligners</h3>
+        <p>Invisible teeth straightening without metallic braces for teens & adults.</p>
+        <div class="card-price">Starting from ₹65,000</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">💎</div>
+        <h3>Smile Makeover</h3>
+        <p>Custom DMLS crowns, veneers, and teeth whitening for radiant smiles.</p>
+        <div class="card-price">From ₹4,500 / tooth</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🩺</div>
+        <h3>Doctor Consultation</h3>
+        <p>Full digital examination, X-ray evaluation, and treatment roadmap.</p>
+        <div class="card-price">₹500 Consultation Fee</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Floating Chat Launcher -->
+  <div class="chat-bubble-launcher" onclick="toggleChat()" title="Talk to AI Receptionist">
+    💬
+  </div>
+
+  <!-- Interactive AI Window -->
+  <div class="ai-chat-window" id="chatWindow">
+    <div class="ai-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="ai-avatar">👩‍⚕️</div>
+        <div>
+          <div style="font-weight: 700; font-size: 0.9rem;">Maya • AI Receptionist</div>
+          <div style="font-size: 0.7rem; opacity: 0.9;">Healing Touch Dental (Active 24/7)</div>
+        </div>
+      </div>
+      <div style="cursor: pointer; font-size: 1.2rem;" onclick="toggleChat()">✕</div>
+    </div>
+    <div class="ai-messages" id="aiMessages">
+      <div class="msg msg-bot">
+        Hello! Welcome to Healing Touch Dental & Aesthetics. I am Maya, Dr. Shrey & Dr. Smriti's 24/7 AI booking assistant. 
+        <br><br>
+        Are you looking to book an appointment, check treatment costs (implants, aligners, cleaning), or ask about our clinic timings?
+      </div>
+    </div>
+    <div class="ai-input-bar">
+      <input type="text" id="userInput" placeholder="Ask a question (e.g., 'How much is scaling?')" onkeypress="handleKey(event)">
+      <button onclick="sendMsg()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    function toggleChat() {
+      const win = document.getElementById('chatWindow');
+      win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+      if (win.style.display === 'flex') {
+        document.getElementById('userInput').focus();
+      }
+    }
+
+    async function sendMsg() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+
+      const container = document.getElementById('aiMessages');
+      container.innerHTML += `<div class="msg msg-user">${text}</div>`;
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ niche: 'clinic', message: text })
+        });
+        const data = await res.json();
+        container.innerHTML += `<div class="msg msg-bot">${data.reply}</div>`;
+        container.scrollTop = container.scrollHeight;
+      } catch (e) {
+        container.innerHTML += `<div class="msg msg-bot">I would be delighted to schedule that for you! Would tomorrow morning or afternoon suit you best?</div>`;
+      }
+    }
+
+    function handleKey(e) { if (e.key === 'Enter') sendMsg(); }
+  </script>
+</body>
+</html>
+
