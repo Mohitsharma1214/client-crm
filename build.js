@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
-console.log('--- Running Voice-AI Build & Configuration Check ---');
+console.log('--- Running Client CRM Build & Configuration Check ---');
 
 // Check environment variables
 const envPath = existsSync('.env') ? '.env' : existsSync('.env.local') ? '.env.local' : null;

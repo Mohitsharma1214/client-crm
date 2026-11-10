@@ -13,7 +13,7 @@ An enterprise-grade client acquisition pipeline, 24/7 AI Receptionist demo hub, 
 - **⏰ Smart Follow-Up Workspace**: Intelligent classification of overdue, due today, and upcoming follow-ups with tailored 2nd-touch WhatsApp follow-up copy.
 - **📍 Smart Google Maps / Visiting Card Parser**: Paste raw listing text to automatically extract doctor names, clean phone numbers, websites, and categorize pain points.
 - **🗄️ Neon PostgreSQL & Lakebase Sync**: Auto-detects Neon cloud database with zero-latency failover to local JSON storage.
-- **⚛️ Standalone React 18 + TypeScript App**: Includes a complete, independent Vite + React + TypeScript codebase in `voice-ai-crm-react/` that can be run standalone or downloaded directly as a ZIP archive.
+- **⚛️ Standalone React 18 + TypeScript App**: Includes a complete, independent Vite + React + TypeScript codebase in `client-crm-react/` that can be run standalone or downloaded directly as a ZIP archive.
 
 ---
 
@@ -34,8 +34,8 @@ An enterprise-grade client acquisition pipeline, 24/7 AI Receptionist demo hub, 
 ├── static/
 │   ├── index.html             # Command Center Dashboard UI
 │   ├── clinic_demo.html       # Clinic demo simulation page
-│   └── voice-ai-crm-react.zip # Pre-packaged React app archive
-└── voice-ai-crm-react/        # Standalone React 18 + TypeScript + Vite project
+│   └── client-crm-react.zip   # Pre-packaged React app archive
+└── client-crm-react/          # Standalone React 18 + TypeScript + Vite project
     ├── src/
     │   ├── components/        # Fully typed modular React UI components
     │   ├── data/              # Preloaded prospect records
@@ -74,7 +74,7 @@ Open **`http://localhost:8000`** in your browser.
 
 ### 2. Standalone React + TypeScript App
 ```bash
-cd voice-ai-crm-react
+cd client-crm-react
 npm install
 npm run dev
 ```

@@ -3,8 +3,8 @@
 env/
 venv/
 node_modules/
-voice-ai-crm-react/node_modules/
-voice-ai-crm-react/dist/
+client-crm-react/node_modules/
+client-crm-react/dist/
 
 # Python cache & bytecode
 __pycache__/
