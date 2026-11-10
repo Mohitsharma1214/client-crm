@@ -55,6 +55,20 @@ export const App: React.FC = () => {
     }
   }, [prospects]);
 
+  // Sync with live Backend API if available
+  useEffect(() => {
+    fetch('/api/prospects')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProspects(data);
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully to local storage / initial prospects
+      });
+  }, []);
+
   // View & Filter State
   const [view, setView] = useState<'table' | 'kanban'>('table');
   const [currentFilter, setCurrentFilter] = useState<string>('ALL');
@@ -151,7 +165,7 @@ export const App: React.FC = () => {
   }, [prospects, currentFilter, nicheFilter, searchQuery]);
 
   // Mutators
-  const handleStageChange = (id: string, stage: PipelineStage) => {
+  const handleStageChange = async (id: string, stage: PipelineStage) => {
     setProspects((prev) =>
       prev.map((p) => {
         if (p.id !== id) return p;
@@ -160,9 +174,16 @@ export const App: React.FC = () => {
       })
     );
     showToast(`✓ Updated stage to ${stage}`);
+    try {
+      await fetch('/api/prospects/stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, stage })
+      });
+    } catch (e) {}
   };
 
-  const handleQuickReply = (id: string) => {
+  const handleQuickReply = async (id: string) => {
     setProspects((prev) =>
       prev.map((p) => {
         if (p.id !== id) return p;
@@ -175,6 +196,13 @@ export const App: React.FC = () => {
       })
     );
     showToast('💬 Logged client reply!');
+    try {
+      await fetch('/api/prospects/quick-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, reply_notes: 'Client replied expressing interest in 24/7 AI Receptionist walkthrough.' })
+      });
+    } catch (e) {}
   };
 
   const handleToggleReplied = (id: string) => {
@@ -188,7 +216,7 @@ export const App: React.FC = () => {
     );
   };
 
-  const handleBulkDispatched = (dispatchedIds: string[]) => {
+  const handleBulkDispatched = async (dispatchedIds: string[]) => {
     const nowStr = new Date().toLocaleDateString('en-IN', {
       month: 'short',
       day: 'numeric',
@@ -202,11 +230,25 @@ export const App: React.FC = () => {
       })
     );
     showToast(`🚀 Dispatched WhatsApp pitches to ${dispatchedIds.length} clients!`);
+    try {
+      await fetch('/api/prospects/bulk-pitch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: dispatchedIds })
+      });
+    } catch (e) {}
   };
 
-  const handleAddClient = (newLead: Prospect) => {
+  const handleAddClient = async (newLead: Prospect) => {
     setProspects((prev) => [newLead, ...prev]);
     showToast(`✓ Added ${newLead.business} to pipeline`);
+    try {
+      await fetch('/api/prospects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLead)
+      });
+    } catch (e) {}
   };
 
   const handleSaveClient = (updated: Prospect) => {
