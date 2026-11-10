@@ -753,40 +753,59 @@ async def parse_raw_info(request):
         return JSONResponse({"status": "error", "message": "No text provided"}, status_code=400)
 
     resolved_info = raw
-    # 1. Expand Google Maps short links or place URLs
+    # 1. Expand Google Maps short links, share.google, or any shared URL
     url_match = re.search(r'https?://[^\s]+', raw)
     if url_match:
         url = url_match.group(0).rstrip('.,;()')
-        if any(k in url for k in ["maps.app.goo.gl", "google.com/maps", "goo.gl/maps"]):
-            try:
-                async with httpx.AsyncClient(follow_redirects=True, timeout=6.0) as client:
-                    resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-                    final_url = str(resp.url)
-                    place_match = re.search(r'/maps/place/([^/@?]+)', final_url)
-                    if place_match:
-                        place_name = urllib.parse.unquote_plus(place_match.group(1))
-                        resolved_info += f"\nGoogle Maps Place Name: {place_name}"
-                    # Check page title
-                    title_match = re.search(r'<title>([^<]+)</title>', resp.text, re.IGNORECASE)
-                    if title_match:
-                        t = title_match.group(1).replace("- Google Maps", "").strip()
-                        if t and not t.lower().startswith("google"):
-                            resolved_info += f"\nGoogle Maps Title: {t}"
-            except Exception as e:
-                print("Google maps expand warning:", e)
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+                resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"})
+                final_url = str(resp.url)
+                resolved_info += f"\nResolved Destination URL: {final_url}"
+
+                # A. Extract place name from /maps/place/...
+                place_match = re.search(r'/maps/place/([^/@?]+)', final_url)
+                if place_match:
+                    place_name = urllib.parse.unquote_plus(place_match.group(1))
+                    resolved_info += f"\nGoogle Maps Place Name: {place_name}"
+
+                # B. Extract search query from q= parameter (e.g. share.google links)
+                q_match = re.search(r'[?&]q=([^&\"\'<>]+)', final_url) or re.search(r'[?&]q=([^&\"\'<>]+)', resp.text)
+                if q_match:
+                    query_name = urllib.parse.unquote_plus(q_match.group(1))
+                    if not any(k in query_name.lower() for k in ["search", "google", "login", "auth"]):
+                        resolved_info += f"\nGoogle Share Business Query: {query_name}"
+
+                # C. Check page title
+                title_match = re.search(r'<title>([^<]+)</title>', resp.text, re.IGNORECASE)
+                if title_match:
+                    t = title_match.group(1).replace("- Google Maps", "").replace("- Google Search", "").strip()
+                    if t and not t.lower().startswith("google") and not t.lower().startswith("404"):
+                        resolved_info += f"\nPage Title: {t}"
+
+                # D. Look for phone numbers in destination page
+                page_phones = re.findall(r'(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', resp.text)
+                if page_phones:
+                    valid_phones = [p for p in page_phones if not p.startswith("1794")]
+                    if valid_phones:
+                        resolved_info += f"\nDetected Phone: {valid_phones[0]}"
+        except Exception as e:
+            print("URL expand warning:", e)
 
     # 2. Try Groq Qwen LLM
     try:
         prompt = f"""You are an elite B2B CRM AI extractor and copywriter for luxury clinics and aesthetic businesses in Gurugram/NCR.
-Given the following raw text or Google Maps info:
+Given the following raw text or Google Maps / Search share link:
 1. Extract client business details into clean JSON.
-2. Ignore Google Maps URLs (google.com, goo.gl) for the website field.
-3. Generate a hyper-personalized Initial WhatsApp Pitch AND custom multi-day follow-up messages tailored specifically to this business and founder.
+2. If a Google share link or place name is present (e.g. 'Sakshi Dental Clinic'), accurately extract that as the business name!
+3. If an owner/doctor is named or strongly implied (e.g. 'Dr. Sakshi' from 'Sakshi Dental Clinic'), set owner accordingly (e.g. 'Dr. Sakshi'). If unknown, use 'Dr. & Team'.
+4. Do NOT use google.com, goo.gl, or share.google as the website. If no external clinic website is found, leave website empty "".
+5. Generate a hyper-personalized Initial WhatsApp Pitch AND custom multi-day follow-up messages tailored specifically to this business and founder.
 
 Output strictly valid JSON with no markdown formatting:
 {{
   "business": "Business Name",
-  "owner": "Doctor or Founder name or empty",
+  "owner": "Doctor or Founder name",
   "phone": "Phone number or empty",
   "website": "Official website or empty",
   "location": "City or locality (e.g. Gurugram)",
@@ -863,8 +882,19 @@ Raw Input:
             if extracted["phone"] and extracted["phone"] in first_line:
                 first_line = first_line.split(extracted["phone"])[0].strip().strip("-–•,")
             extracted["business"] = first_line[:60].strip()
+        elif "Google Share Business Query:" in resolved_info:
+            extracted["business"] = resolved_info.split("Google Share Business Query:")[1].strip().split("\n")[0][:60]
         elif "Google Maps Place Name:" in resolved_info:
             extracted["business"] = resolved_info.split("Google Maps Place Name:")[1].strip().split("\n")[0][:60]
+        elif "Page Title:" in resolved_info:
+            extracted["business"] = resolved_info.split("Page Title:")[1].strip().split("\n")[0][:60]
+
+    if not extracted["owner"] and extracted["business"]:
+        b_words = extracted["business"].split()
+        if b_words and any(k in extracted["business"].lower() for k in ["dental", "clinic", "derma", "skin", "aesthetic"]):
+            first_w = b_words[0].strip()
+            if first_w.lower() not in ["the", "apex", "care", "city", "elite", "best"]:
+                extracted["owner"] = f"Dr. {first_w}"
 
     # Detect Niche
     lower_raw = (raw + " " + resolved_info).lower()
