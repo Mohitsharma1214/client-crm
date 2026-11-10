@@ -2414,6 +2414,160 @@
         justify-content: flex-end;
       }
     }
+  
+    /* ========================================================
+       AI CRM COPILOT & GUIDED 1-BY-1 OUTREACH WIZARD
+       ======================================================== */
+    .ai-copilot-floating-btn {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      z-index: 99;
+      background: linear-gradient(135deg, #1A1915 0%, #2D2B24 100%);
+      color: #FBF9F5;
+      border: 1px solid rgba(217, 119, 87, 0.45);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 12px rgba(217, 119, 87, 0.2);
+      border-radius: 30px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .ai-copilot-floating-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3), 0 0 16px rgba(217, 119, 87, 0.35);
+      border-color: var(--terracotta);
+    }
+    [data-theme="dark"] .ai-copilot-floating-btn {
+      background: linear-gradient(135deg, #2A2820 0%, #1E1D18 100%);
+      border-color: rgba(217, 119, 87, 0.55);
+    }
+
+    .ai-copilot-drawer {
+      position: fixed;
+      top: 0;
+      right: -440px;
+      width: 420px;
+      max-width: 95vw;
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+    }
+    .ai-copilot-drawer.open {
+      right: 0;
+    }
+    .ai-copilot-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-subtle);
+    }
+    .ai-copilot-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ai-msg {
+      max-width: 90%;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .ai-msg-user {
+      align-self: flex-end;
+      background: var(--text);
+      color: var(--bg);
+      border-bottom-right-radius: 2px;
+    }
+    .ai-msg-assistant {
+      align-self: flex-start;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 2px;
+    }
+    .ai-copilot-chips {
+      padding: 8px 14px;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg);
+      -webkit-overflow-scrolling: touch;
+    }
+    .ai-chip {
+      white-space: nowrap;
+      font-size: 0.72rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 5px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+    .ai-chip:hover {
+      background: var(--surface-hover);
+      color: var(--terracotta);
+      border-color: var(--terracotta);
+    }
+    .ai-copilot-input-bar {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      background: var(--surface);
+    }
+
+    /* Guided 1-by-1 Outreach Wizard */
+    .wizard-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .wizard-pitch-textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--text);
+      resize: vertical;
+      min-height: 65px;
+      box-sizing: border-box;
+      font-family: var(--font-sans);
+    }
+    .wizard-action-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
@@ -2939,71 +3093,32 @@
   </div>
 
   <!-- ========================================================
-       MODAL 4: 1-CLICK BULK WHATSAPP OUTREACH BLAST
+       MODAL 4: GUIDED 1-BY-1 WHATSAPP OUTREACH QUEUE
        ======================================================== -->
   <div class="modal-backdrop" id="bulkSendModal" onclick="handleBackdropClick(event, 'bulkSendModal')">
-    <div class="modal-box" style="max-width: 640px;">
+    <div class="modal-box" style="max-width: 620px;">
       <div class="modal-header">
         <div>
-          <h3 class="modal-title">⚡ 1-Click WhatsApp Outreach Blast</h3>
-          <div class="modal-subtitle">Directly message all unsent clients with tailored AI pitches and advance status in Neon DB.</div>
+          <h3 class="modal-title">⚡ WhatsApp Outreach Queue (1-by-1 Flow)</h3>
+          <div class="modal-subtitle">Open one client, verify and send, confirm "Sent", then immediately advance to the next!</div>
         </div>
         <button class="modal-close" onclick="closeModal('bulkSendModal')">&times;</button>
       </div>
 
-      <!-- Live Unsent Stats Banner -->
-      <div class="bulk-stats-banner">
-        <div class="bulk-stat-item">
-          <span class="bulk-stat-label">Pending Leads</span>
-          <span class="bulk-stat-val" id="bulkStatPending" style="color: var(--terracotta);">0</span>
-        </div>
-        <div class="bulk-stat-item">
-          <span class="bulk-stat-label">Selected to Send</span>
-          <span class="bulk-stat-val" id="bulkStatSelected" style="color: #25D366;">0</span>
-        </div>
-        <div class="bulk-stat-item">
-          <span class="bulk-stat-label">Pipeline Value</span>
-          <span class="bulk-stat-val" id="bulkStatValue">₹0</span>
-        </div>
-      </div>
-
-      <!-- Select All / Controls -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.78rem; flex-wrap: wrap; gap: 6px;">
-        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; color: var(--text);">
-          <input type="checkbox" id="bulkSelectAllCheckbox" checked onchange="toggleSelectAllBulk(this.checked)" style="accent-color: #25D366; width: 15px; height: 15px;">
-          Select All Unsent Clients
-        </label>
-        <span style="color: var(--text-tertiary); font-size: 0.72rem;">Pre-personalized pitch per client</span>
-      </div>
-
-      <!-- Progress bar (shown during/after dispatch) -->
-      <div id="bulkProgressBox" style="display: none; margin-bottom: 14px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.74rem; font-weight: 600; margin-bottom: 6px;">
-          <span id="bulkProgressStatus">Dispatching WhatsApp pitches...</span>
-          <span id="bulkProgressText">0 / 0</span>
+      <!-- Progress Track -->
+      <div style="margin-bottom: 14px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.76rem; font-weight: 600; margin-bottom: 6px;">
+          <span id="wizardStepCounter" style="color: var(--terracotta);">Lead 1 of 0</span>
+          <span id="wizardProgressPct">0% Completed</span>
         </div>
         <div style="height: 6px; background: var(--border-subtle); border-radius: 3px; overflow: hidden;">
-          <div id="bulkProgressBar" style="height: 100%; width: 0%; background: #25D366; transition: width 0.25s ease;"></div>
+          <div id="wizardProgressBar" style="height: 100%; width: 0%; background: #25D366; transition: width 0.25s ease;"></div>
         </div>
       </div>
 
-      <!-- Checklist of Unsent Prospects -->
-      <div class="bulk-leads-list" id="bulkLeadsList">
-        <!-- Rendered dynamically -->
-      </div>
-
-      <!-- Actions -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; flex-wrap: wrap; gap: 10px;">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="executeBulkMarkOnly()" id="btnBulkMarkOnly" title="Update status to Pitch Sent in Neon DB without opening WhatsApp tabs">
-          ✓ Mark All Sent (DB Only)
-        </button>
-
-        <div style="display: flex; gap: 8px;">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('bulkSendModal')">Cancel</button>
-          <button type="button" class="btn btn-wa-blast btn-sm" id="btnStartBulkDispatch" onclick="startBulkWhatsAppDispatch()">
-            <span>🚀 Send to (<span id="bulkSubmitCount">0</span>) Clients</span>
-          </button>
-        </div>
+      <!-- Active Client Card Container (Dynamic) -->
+      <div id="wizardActiveCardContainer">
+        <!-- Rendered by renderWizardStep() -->
       </div>
     </div>
   </div>
@@ -3172,247 +3287,190 @@
       });
     }
 
+    /* ========================================================
+       GUIDED 1-BY-1 WHATSAPP OUTREACH QUEUE (Step-by-Step Flow)
+       ======================================================== */
+    let wizardLeads = [];
+    let wizardIndex = 0;
+    let wizardSentCount = 0;
+
     function openBulkSendModal() {
-      const unsent = getUnsentLeads();
-      const listEl = document.getElementById('bulkLeadsList');
-      const statPending = document.getElementById('bulkStatPending');
-      const statSelected = document.getElementById('bulkStatSelected');
-      const statValue = document.getElementById('bulkStatValue');
-      const submitCount = document.getElementById('bulkSubmitCount');
-      const progressBox = document.getElementById('bulkProgressBox');
-      const selectAll = document.getElementById('bulkSelectAllCheckbox');
-
-      if (progressBox) progressBox.style.display = 'none';
-      if (selectAll) selectAll.checked = true;
-
-      const totalVal = unsent.reduce((sum, l) => sum + (parseInt(l.deal_value) || 29999), 0);
-      if (statPending) statPending.innerText = unsent.length;
-      if (statSelected) statSelected.innerText = unsent.length;
-      if (statValue) statValue.innerText = `₹${totalVal.toLocaleString('en-IN')}`;
-      if (submitCount) submitCount.innerText = unsent.length;
-
-      if (!unsent.length) {
-        if (listEl) {
-          listEl.innerHTML = `
-            <div style="padding: 32px 16px; text-align: center; color: var(--text-secondary);">
-              <div style="font-size: 2rem; margin-bottom: 8px;">🎉</div>
-              <strong style="color: var(--text); display: block; font-size: 0.95rem;">All clients have been contacted!</strong>
-              <div style="font-size: 0.76rem; margin-top: 4px; color: var(--text-tertiary);">There are no pending prospects in "Ready to Pitch" stage.</div>
-            </div>
-          `;
-        }
-        const btnDispatch = document.getElementById('btnStartBulkDispatch');
-        if (btnDispatch) btnDispatch.disabled = true;
-        const btnMarkOnly = document.getElementById('btnBulkMarkOnly');
-        if (btnMarkOnly) btnMarkOnly.disabled = true;
-      } else {
-        const btnDispatch = document.getElementById('btnStartBulkDispatch');
-        if (btnDispatch) btnDispatch.disabled = false;
-        const btnMarkOnly = document.getElementById('btnBulkMarkOnly');
-        if (btnMarkOnly) btnMarkOnly.disabled = false;
-
-        if (listEl) {
-          listEl.innerHTML = unsent.map(lead => {
-            const cleanPhone = formatWhatsAppPhone(lead.phone);
-            const pitch = lead.pitch || `Hi ${lead.owner}! Admiring your work at ${lead.business}. Quick question: would you be open to an automated 24/7 AI booking assistant for your client inquiries?`;
-            const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(pitch)}`;
-
-            return `
-              <div class="bulk-lead-item" id="bulkItem_${lead.id}">
-                <input type="checkbox" class="bulk-lead-checkbox" value="${lead.id}" checked onchange="updateBulkSelectedCount()">
-                <div class="bulk-lead-info">
-                  <div class="bulk-lead-title">
-                    <span>${escapeHtml(lead.business)}</span>
-                    <span style="font-size: 0.7rem; font-weight: 500; color: var(--text-tertiary); font-family: var(--font-mono);">${escapeHtml(lead.phone || 'No phone')}</span>
-                  </div>
-                  <div class="bulk-lead-meta">
-                    👤 ${escapeHtml(lead.owner || 'Business Owner')} • 📍 ${escapeHtml(lead.location || 'Local')} • 🏷️ ${escapeHtml(lead.niche || 'Clinic')}
-                  </div>
-                  <div class="bulk-lead-pitch-preview" title="${escapeHtml(pitch)}">
-                    💬 ${escapeHtml(pitch)}
-                  </div>
-                </div>
-                <div class="bulk-lead-status" id="bulkStatus_${lead.id}">
-                  <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs" style="text-decoration: none;" title="Open WhatsApp manually">
-                    Open ↗
-                  </a>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-
+      wizardLeads = getUnsentLeads();
+      wizardIndex = 0;
+      wizardSentCount = 0;
       openModal('bulkSendModal');
+      renderWizardStep();
     }
 
-    function toggleSelectAllBulk(checked) {
-      const checkboxes = document.querySelectorAll('#bulkLeadsList .bulk-lead-checkbox');
-      checkboxes.forEach(cb => { cb.checked = checked; });
-      updateBulkSelectedCount();
-    }
+    function renderWizardStep() {
+      const container = document.getElementById('wizardActiveCardContainer');
+      const counter = document.getElementById('wizardStepCounter');
+      const pctEl = document.getElementById('wizardProgressPct');
+      const bar = document.getElementById('wizardProgressBar');
+      if (!container) return;
 
-    function updateBulkSelectedCount() {
-      const checkboxes = document.querySelectorAll('#bulkLeadsList .bulk-lead-checkbox');
-      const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
-      const count = checkedBoxes.length;
-
-      const statSelected = document.getElementById('bulkStatSelected');
-      if (statSelected) statSelected.innerText = count;
-
-      const submitCount = document.getElementById('bulkSubmitCount');
-      if (submitCount) submitCount.innerText = count;
-
-      const btnDispatch = document.getElementById('btnStartBulkDispatch');
-      if (btnDispatch) btnDispatch.disabled = (count === 0);
-
-      const btnMarkOnly = document.getElementById('btnBulkMarkOnly');
-      if (btnMarkOnly) btnMarkOnly.disabled = (count === 0);
-
-      const selectAll = document.getElementById('bulkSelectAllCheckbox');
-      if (selectAll) selectAll.checked = (count === checkboxes.length && count > 0);
-    }
-
-    async function startBulkWhatsAppDispatch() {
-      const checkboxes = document.querySelectorAll('#bulkLeadsList .bulk-lead-checkbox:checked');
-      const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-      if (!selectedIds.length) {
-        showToast('⚠️ No clients selected for bulk outreach');
+      if (!wizardLeads || wizardLeads.length === 0) {
+        if (counter) counter.innerText = '0 of 0';
+        if (pctEl) pctEl.innerText = '100% Completed';
+        if (bar) bar.style.width = '100%';
+        container.innerHTML = `
+          <div style="text-align: center; padding: 36px 16px;">
+            <div style="font-size: 2.4rem; margin-bottom: 10px;">🎉</div>
+            <strong style="color: var(--text); display: block; font-size: 1rem; margin-bottom: 6px;">All Clients Have Been Contacted!</strong>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 18px;">There are no unsent prospects pending in "Ready to Pitch" stage.</p>
+            <button class="btn btn-secondary" onclick="closeModal('bulkSendModal')">Close</button>
+          </div>
+        `;
         return;
       }
 
-      const selectedLeads = allLeads.filter(l => selectedIds.includes(l.id));
-      const btnDispatch = document.getElementById('btnStartBulkDispatch');
-      const btnMarkOnly = document.getElementById('btnBulkMarkOnly');
-      if (btnDispatch) {
-        btnDispatch.disabled = true;
-        btnDispatch.innerText = '⏳ Dispatching...';
+      if (wizardIndex >= wizardLeads.length) {
+        if (counter) counter.innerText = `Finished (${wizardLeads.length}/${wizardLeads.length})`;
+        if (pctEl) pctEl.innerText = '100% Completed';
+        if (bar) bar.style.width = '100%';
+        container.innerHTML = `
+          <div style="text-align: center; padding: 36px 16px;">
+            <div style="font-size: 2.4rem; margin-bottom: 10px;">🏆</div>
+            <strong style="color: var(--text); display: block; font-size: 1.05rem; margin-bottom: 6px;">Outreach Queue Complete!</strong>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 20px;">
+              You have reviewed <strong>${wizardLeads.length}</strong> clients (${wizardSentCount} confirmed sent).<br>
+              Pipeline status, timestamps, and metrics have been synced.
+            </p>
+            <button class="btn btn-terracotta" onclick="closeModal('bulkSendModal'); fetchLeads(true);">Done</button>
+          </div>
+        `;
+        return;
       }
-      if (btnMarkOnly) btnMarkOnly.disabled = true;
 
-      const progressBox = document.getElementById('bulkProgressBox');
-      const progressBar = document.getElementById('bulkProgressBar');
-      const progressStatus = document.getElementById('bulkProgressStatus');
-      const progressText = document.getElementById('bulkProgressText');
-      if (progressBox) progressBox.style.display = 'block';
+      const lead = wizardLeads[wizardIndex];
+      const total = wizardLeads.length;
+      const currentNum = wizardIndex + 1;
+      const pct = Math.round(((currentNum - 1) / total) * 100);
+
+      if (counter) counter.innerText = `Client ${currentNum} of ${total}`;
+      if (pctEl) pctEl.innerText = `${pct}% done (${wizardSentCount} sent)`;
+      if (bar) bar.style.width = `${Math.max(6, pct)}%`;
+
+      const cleanPhone = formatWhatsAppPhone(lead.phone);
+      const defaultPitch = lead.pitch || `Hi ${lead.owner || 'there'}! Admiring your work at ${lead.business}. Quick question: would you be open to an automated 24/7 AI booking assistant on WhatsApp for your client inquiries?`;
+
+      container.innerHTML = `
+        <div class="wizard-card" style="background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+            <div>
+              <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text);">${escapeHtml(lead.business)}</h4>
+              <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 3px;">
+                👤 <strong>${escapeHtml(lead.owner || 'Key Contact')}</strong> • 📍 ${escapeHtml(lead.location || 'Gurugram')} • 🏷️ ${escapeHtml(lead.niche || 'Clinic')}
+              </div>
+            </div>
+            <span class="badge badge-emerald" style="font-size: 0.78rem;">₹${(parseInt(lead.deal_value) || 29999).toLocaleString('en-IN')}</span>
+          </div>
+
+          <div style="background: var(--bg-subtle); padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.76rem; color: var(--text-secondary);">Direct WhatsApp Number:</span>
+            <strong style="font-family: var(--font-mono); font-size: 0.88rem; color: var(--text);">${escapeHtml(cleanPhone || lead.phone || 'No phone')}</strong>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+              <label style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary);">Personalized WhatsApp Pitch (Editable):</label>
+              <button type="button" class="btn btn-secondary btn-xs" onclick="resetWizardPitch(${wizardIndex})" style="font-size: 0.68rem; padding: 2px 7px;">Reset Pitch</button>
+            </div>
+            <textarea id="wizardPitchInput" rows="3" style="width: 100%; box-sizing: border-box; font-size: 0.82rem; line-height: 1.45; padding: 9px 11px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); resize: vertical;">${escapeHtml(defaultPitch)}</textarea>
+          </div>
+
+          <!-- Step 1 & Step 2 Buttons -->
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button type="button" class="btn btn-wa-blast" id="btnWizardOpenWa" onclick="openWizardCurrentWhatsApp()" style="width: 100%; justify-content: center; font-size: 0.9rem; padding: 11px 16px;">
+              <span>💬</span> Step 1: Open WhatsApp for This Client ↗
+            </button>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px;">
+              <button type="button" class="btn btn-terracotta" id="btnWizardConfirmSent" onclick="confirmWizardSentAndNext()" style="justify-content: center; font-size: 0.84rem; padding: 10px;">
+                <span>✓</span> Step 2: Sent! Next Client ➔
+              </button>
+              
+              <button type="button" class="btn btn-secondary" onclick="skipWizardClient()" style="justify-content: center; font-size: 0.82rem; padding: 10px;">
+                Skip ⏭️
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openWizardCurrentWhatsApp() {
+      if (wizardIndex >= wizardLeads.length) return;
+      const lead = wizardLeads[wizardIndex];
+      const cleanPhone = formatWhatsAppPhone(lead.phone);
+      const pitchInput = document.getElementById('wizardPitchInput');
+      const pitch = pitchInput ? pitchInput.value.trim() : (lead.pitch || '');
+      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(pitch)}`;
+
+      // Open ONLY this single client tab
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      showToast(`💬 Opened WhatsApp tab for ${lead.business}. Check WhatsApp, send message, then click "Sent! Next Client"`);
+
+      // Visually illuminate Step 2
+      const btnSent = document.getElementById('btnWizardConfirmSent');
+      if (btnSent) {
+        btnSent.style.boxShadow = '0 0 14px rgba(217, 119, 87, 0.7)';
+        btnSent.innerHTML = '<span>✓</span> Step 2: Message Sent? Click Here ➔';
+      }
+    }
+
+    async function confirmWizardSentAndNext() {
+      if (wizardIndex >= wizardLeads.length) return;
+      const lead = wizardLeads[wizardIndex];
+      const pitchInput = document.getElementById('wizardPitchInput');
+      if (pitchInput && pitchInput.value.trim()) {
+        lead.pitch = pitchInput.value.trim();
+      }
 
       const now = new Date();
       const nowStr = now.toLocaleDateString('en-IN', {
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
       });
 
-      // 1. Immediately advance local state and update metrics (0ms reactivity)
-      selectedLeads.forEach(lead => {
-        lead.stage = 'PITCH_SENT';
-        lead.has_replied = false;
-        lead.last_contacted = nowStr;
-      });
+      // Update local prospect state immediately (0ms latency)
+      lead.stage = 'PITCH_SENT';
+      lead.has_replied = false;
+      lead.last_contacted = nowStr;
+      wizardSentCount++;
+
       updateDashboardMetrics();
       applyFilters();
 
-      // 2. Dispatch WhatsApp tabs with short pacing to avoid popup blocker blockage
-      let dispatched = 0;
-      for (let i = 0; i < selectedLeads.length; i++) {
-        const lead = selectedLeads[i];
-        const cleanPhone = formatWhatsAppPhone(lead.phone);
-        const pitchText = lead.pitch || `Hi ${lead.owner}! Admiring your work at ${lead.business}. Quick question: would you be open to an automated 24/7 AI booking assistant for your client inquiries?`;
-        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(pitchText)}`;
-
-        // Update progress UI
-        dispatched++;
-        const pct = Math.round((dispatched / selectedLeads.length) * 100);
-        if (progressBar) progressBar.style.width = `${pct}%`;
-        if (progressText) progressText.innerText = `${dispatched} / ${selectedLeads.length}`;
-        if (progressStatus) progressStatus.innerText = `Dispatching ${lead.business}...`;
-
-        // Update item status in modal checklist
-        const statusEl = document.getElementById(`bulkStatus_${lead.id}`);
-        if (statusEl) {
-          statusEl.innerHTML = `
-            <span style="color: #25D366; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;">
-              ✓ Dispatched
-              <a href="${waUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 0.68rem; color: var(--text-secondary); text-decoration: underline; margin-left: 4px;">Re-open ↗</a>
-            </span>
-          `;
-        }
-
-        // Open WhatsApp deep link
-        try {
-          window.open(waUrl, '_blank', 'noopener,noreferrer');
-        } catch (e) {
-          console.warn('Popup window.open warning:', e);
-        }
-
-        // Delay between openings
-        if (i < selectedLeads.length - 1) {
-          await new Promise(r => setTimeout(r, 450));
-        }
-      }
-
-      if (progressStatus) progressStatus.innerText = '✓ All WhatsApp outreach links dispatched!';
-
-      // 3. Persist bulk update in Neon DB
+      // Persist stage update to Neon database in background
       try {
-        const res = await fetch('/api/prospects/bulk-pitch', {
+        fetch('/api/prospects/stage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: selectedIds })
-        });
-        const result = await res.json();
-        console.log("Bulk pitch Neon DB response:", result);
-      } catch (err) {
-        console.error("Bulk pitch DB error:", err);
-      }
+          body: JSON.stringify({ id: lead.id, stage: 'PITCH_SENT' })
+        }).catch(err => console.warn('Background stage sync:', err));
+      } catch (e) {}
 
-      showToast(`🚀 Successfully dispatched WhatsApp messages to ${selectedLeads.length} clients!`);
-      if (btnDispatch) {
-        btnDispatch.innerText = '✓ Dispatched All';
-      }
+      showToast(`✓ Marked ${lead.business} as Pitch Sent! Loading next client...`);
 
-      // Re-sync stats from DB
-      loadStats();
-
-      // Automatically close modal after brief delay so user sees completion
-      setTimeout(() => {
-        closeModal('bulkSendModal');
-      }, 1400);
+      // Advance to next lead
+      wizardIndex++;
+      renderWizardStep();
     }
 
-    async function executeBulkMarkOnly() {
-      const checkboxes = document.querySelectorAll('#bulkLeadsList .bulk-lead-checkbox:checked');
-      const selectedIds = Array.from(checkboxes).map(cb => cb.value);
-      if (!selectedIds.length) {
-        showToast('⚠️ No clients selected');
-        return;
-      }
+    function skipWizardClient() {
+      if (wizardIndex >= wizardLeads.length) return;
+      const lead = wizardLeads[wizardIndex];
+      showToast(`⏭️ Skipped ${lead.business}`);
+      wizardIndex++;
+      renderWizardStep();
+    }
 
-      const selectedLeads = allLeads.filter(l => selectedIds.includes(l.id));
-      const now = new Date();
-      const nowStr = now.toLocaleDateString('en-IN', {
-        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      });
-
-      selectedLeads.forEach(lead => {
-        lead.stage = 'PITCH_SENT';
-        lead.has_replied = false;
-        lead.last_contacted = nowStr;
-      });
-      updateDashboardMetrics();
-      applyFilters();
-
-      try {
-        await fetch('/api/prospects/bulk-pitch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: selectedIds })
-        });
-      } catch (err) {
-        console.error("Bulk mark only DB error:", err);
-      }
-
-      showToast(`✓ Marked ${selectedLeads.length} clients as "Pitch Sent" in Neon DB`);
-      closeModal('bulkSendModal');
-      loadStats();
+    function resetWizardPitch(idx) {
+      if (!wizardLeads[idx]) return;
+      const lead = wizardLeads[idx];
+      const defaultPitch = `Hi ${lead.owner || 'there'}! Admiring your work at ${lead.business}. Quick question: would you be open to an automated 24/7 AI booking assistant on WhatsApp for your client inquiries?`;
+      const input = document.getElementById('wizardPitchInput');
+      if (input) input.value = defaultPitch;
     }
 
     function updateFilterCounts() {
@@ -4558,11 +4616,11 @@
       const input = document.getElementById('gmapsRawInput');
       const btn = document.getElementById('btnAutoFill');
       if (!input || !input.value.trim()) {
-        showToast("⚠️ Paste some business info or Google Maps text first");
+        showToast("⚠️ Paste some business info or Google Maps link first");
         return;
       }
       const rawText = input.value.trim();
-      if (btn) { btn.disabled = true; btn.innerText = "⏳ Parsing..."; }
+      if (btn) { btn.disabled = true; btn.innerText = "⏳ AI Extracting..."; }
 
       try {
         const res = await fetch('/api/prospects/parse-info', {
@@ -4582,9 +4640,10 @@
           if (ex.weakness) document.getElementById('newLeadWeakness').value = ex.weakness;
           if (ex.pitch) document.getElementById('newLeadPitch').value = ex.pitch;
 
-          showToast("✨ Auto-filled clinic details! Review and click Save.");
+          const sourceTag = data.source === 'groq_qwen' ? '🤖 AI Groq Qwen' : '⚡ Smart Pattern';
+          showToast(`✨ Extracted via ${sourceTag}! Review and click Save.`);
         } else {
-          showToast("⚠️ Couldn't auto-parse text. Please fill manually.");
+          showToast("⚠️ Couldn't auto-parse text. Please fill details manually.");
         }
       } catch (err) {
         console.error("Parse error:", err);
@@ -4594,9 +4653,154 @@
       }
     }
 
+    /* ========================================================
+       AI CRM MANAGER COPILOT (Groq Qwen Client Engine)
+       ======================================================== */
+    let copilotHistory = [];
+    let copilotIsOpen = false;
+
+    function toggleAiCopilot() {
+      const drawer = document.getElementById('aiCopilotDrawer');
+      if (!drawer) return;
+      copilotIsOpen = !copilotIsOpen;
+      if (copilotIsOpen) {
+        drawer.classList.add('open');
+        setTimeout(() => {
+          const input = document.getElementById('aiCopilotInput');
+          if (input) input.focus();
+        }, 150);
+      } else {
+        drawer.classList.remove('open');
+      }
+    }
+
+    function sendCopilotPrompt(text) {
+      const input = document.getElementById('aiCopilotInput');
+      if (input) input.value = text;
+      sendCopilotMessage();
+    }
+
+    async function sendCopilotMessage() {
+      const input = document.getElementById('aiCopilotInput');
+      const messagesContainer = document.getElementById('aiCopilotMessages');
+      const btn = document.getElementById('btnSendCopilot');
+      if (!input || !messagesContainer) return;
+
+      const text = input.value.trim();
+      if (!text) return;
+
+      // Render user bubble
+      const userDiv = document.createElement('div');
+      userDiv.className = 'ai-msg ai-msg-user';
+      userDiv.innerText = text;
+      messagesContainer.appendChild(userDiv);
+      input.value = '';
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      // Render typing placeholder
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'ai-msg ai-msg-assistant';
+      loadingDiv.id = 'copilotLoadingIndicator';
+      loadingDiv.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 6px;"><span>⚡</span> <em>Thinking with Groq Qwen...</em></span>';
+      messagesContainer.appendChild(loadingDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/ai/copilot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            history: copilotHistory
+          })
+        });
+        const data = await res.json();
+        const placeholder = document.getElementById('copilotLoadingIndicator');
+        if (placeholder) placeholder.remove();
+
+        if (data.status === 'success' && data.reply) {
+          copilotHistory.push({ role: 'user', content: text });
+          copilotHistory.push({ role: 'assistant', content: data.reply });
+
+          const replyDiv = document.createElement('div');
+          replyDiv.className = 'ai-msg ai-msg-assistant';
+          
+          // Formatter for markdown styles
+          let formatted = escapeHtml(data.reply)
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n\n/g, '<br><br>')
+            .replace(/\n- /g, '<br>• ')
+            .replace(/\n/g, '<br>');
+          replyDiv.innerHTML = formatted;
+          messagesContainer.appendChild(replyDiv);
+        } else {
+          const errDiv = document.createElement('div');
+          errDiv.className = 'ai-msg ai-msg-assistant';
+          errDiv.innerText = `⚠️ Copilot Notice: ${data.message || 'Unable to generate response.'}`;
+          messagesContainer.appendChild(errDiv);
+        }
+      } catch (err) {
+        const placeholder = document.getElementById('copilotLoadingIndicator');
+        if (placeholder) placeholder.remove();
+        const errDiv = document.createElement('div');
+        errDiv.className = 'ai-msg ai-msg-assistant';
+        errDiv.innerText = '⚠️ Network connection error connecting to AI Copilot.';
+        messagesContainer.appendChild(errDiv);
+      } finally {
+        if (btn) btn.disabled = false;
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }
+
     // Initialize application on load
     initTheme();
     fetchLeads();
   </script>
+
+  <!-- ========================================================
+       AI CRM MANAGER COPILOT (Floating Trigger & Slide Drawer)
+       ======================================================== -->
+  <button id="btnAiCopilotTrigger" class="ai-copilot-floating-btn" onclick="toggleAiCopilot()" title="Open Executive AI CRM Copilot">
+    <span>✨</span>
+    <span>AI CRM Copilot</span>
+  </button>
+
+  <div id="aiCopilotDrawer" class="ai-copilot-drawer">
+    <div class="ai-copilot-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.25rem;">✨</span>
+        <div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text);">Client CRM AI Copilot</div>
+          <div style="font-size: 0.68rem; color: var(--text-secondary); font-family: var(--font-mono);">Groq Qwen 27B Active</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="toggleAiCopilot()">&times;</button>
+    </div>
+
+    <!-- Quick Action Suggestion Chips -->
+    <div class="ai-copilot-chips">
+      <button class="ai-chip" onclick="sendCopilotPrompt('What are my top 3 outreach priorities today?')">⚡ Top 3 Priorities</button>
+      <button class="ai-chip" onclick="sendCopilotPrompt('Write an objection reply for a clinic asking about pricing and receptionist replacement')">📝 Price Objection Reply</button>
+      <button class="ai-chip" onclick="sendCopilotPrompt('Analyze my dental and aesthetic conversion rates and give advice')">🎯 Niche Strategy</button>
+      <button class="ai-chip" onclick="sendCopilotPrompt('Draft a 2nd-touch WhatsApp follow-up for clients who havent replied yet')">💬 2nd Follow-Up Script</button>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="ai-copilot-messages" id="aiCopilotMessages">
+      <div class="ai-msg ai-msg-assistant">
+        👋 <strong>Welcome! I am your Executive AI CRM Manager.</strong><br>
+        I have real-time visibility into all 32 prospects in your pipeline, overdue follow-ups, and negotiation stages. Ask me for outreach strategy, custom pitch drafts, or objection responses!
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="ai-copilot-input-bar">
+      <input type="text" id="aiCopilotInput" class="form-input" style="flex: 1;" placeholder="Ask AI CRM Copilot..." onkeydown="if(event.key==='Enter') sendCopilotMessage()">
+      <button class="btn btn-terracotta btn-sm" onclick="sendCopilotMessage()" id="btnSendCopilot">Send ➔</button>
+    </div>
+  </div>
 </body>
 </html>

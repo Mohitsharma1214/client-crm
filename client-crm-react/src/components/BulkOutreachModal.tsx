@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Prospect } from '../types/crm';
-import { getWhatsAppPitchUrl } from '../utils/whatsapp';
+import { getWhatsAppPitchUrl, formatWhatsAppPhone } from '../utils/whatsapp';
 
 interface BulkOutreachModalProps {
   isOpen: boolean;
@@ -15,254 +15,312 @@ export const BulkOutreachModal: React.FC<BulkOutreachModalProps> = ({
   unsentLeads,
   onDispatched,
 }) => {
-  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
-    unsentLeads.map((l) => l.id)
-  );
-  const [isDispatching, setIsDispatching] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0, status: '' });
-  const [dispatchedMap, setDispatchedMap] = useState<Record<string, string>>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [sentIds, setSentIds] = useState<string[]>([]);
+  const [editedPitch, setEditedPitch] = useState<string | null>(null);
+  const [openedCurrent, setOpenedCurrent] = useState(false);
 
   if (!isOpen) return null;
 
-  const toggleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(unsentLeads.map((l) => l.id));
-    } else {
-      setSelectedIds([]);
-    }
+  const currentLead = unsentLeads[currentIndex];
+  const total = unsentLeads.length;
+
+  const defaultPitch = currentLead
+    ? currentLead.pitch ||
+      `Hi ${currentLead.owner || 'there'}! Admiring your work at ${currentLead.business}. Quick question: would you be open to an automated 24/7 AI booking assistant on WhatsApp for your client inquiries?`
+    : '';
+
+  const activePitch = editedPitch !== null ? editedPitch : defaultPitch;
+
+  const handleOpenWhatsApp = () => {
+    if (!currentLead) return;
+    const cleanPhone = formatWhatsAppPhone(currentLead.phone);
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(activePitch)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setOpenedCurrent(true);
   };
 
-  const toggleLead = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+  const handleConfirmSent = () => {
+    if (!currentLead) return;
+    const updatedSent = [...sentIds, currentLead.id];
+    setSentIds(updatedSent);
+    onDispatched([currentLead.id]);
+    setEditedPitch(null);
+    setOpenedCurrent(false);
+    setCurrentIndex((prev) => prev + 1);
   };
 
-  const selectedTotalValue = unsentLeads
-    .filter((l) => selectedIds.includes(l.id))
-    .reduce((sum, l) => sum + (l.deal_value || 29999), 0);
-
-  const startDispatch = async (openWhatsAppTabs: boolean) => {
-    if (selectedIds.length === 0) return;
-    setIsDispatching(true);
-    setProgress({
-      current: 0,
-      total: selectedIds.length,
-      status: 'Initializing outreach sequence...',
-    });
-
-    const leadsToDispatch = unsentLeads.filter((l) => selectedIds.includes(l.id));
-    const newlyDispatched: Record<string, string> = {};
-
-    for (let i = 0; i < leadsToDispatch.length; i++) {
-      const lead = leadsToDispatch[i];
-      const waUrl = getWhatsAppPitchUrl(lead);
-      newlyDispatched[lead.id] = waUrl;
-
-      if (openWhatsAppTabs) {
-        try {
-          window.open(waUrl, '_blank', 'noopener,noreferrer');
-        } catch (e) {
-          console.warn('Popup blocked:', e);
-        }
-      }
-
-      setProgress({
-        current: i + 1,
-        total: leadsToDispatch.length,
-        status: `Dispatched to ${lead.business}...`,
-      });
-      setDispatchedMap({ ...newlyDispatched });
-
-      if (openWhatsAppTabs && i < leadsToDispatch.length - 1) {
-        await new Promise((r) => setTimeout(r, 450));
-      }
-    }
-
-    setProgress({
-      current: leadsToDispatch.length,
-      total: leadsToDispatch.length,
-      status: `✓ Successfully dispatched outreach to ${leadsToDispatch.length} clients!`,
-    });
-    setIsDispatching(false);
-    onDispatched(selectedIds);
+  const handleSkip = () => {
+    setEditedPitch(null);
+    setOpenedCurrent(false);
+    setCurrentIndex((prev) => prev + 1);
   };
+
+  const progressPct = total > 0 ? Math.round((currentIndex / total) * 100) : 100;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="modal-backdrop active"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="modal-box" style={{ maxWidth: '620px' }}>
         <div className="modal-header">
           <div>
-            <div className="modal-title">⚡ 1-Click WhatsApp Client Outreach</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Sequential deep-link dispatch with custom tailored pitches
+            <h3 className="modal-title">⚡ WhatsApp Outreach Queue (1-by-1 Flow)</h3>
+            <div className="modal-subtitle">
+              Open one client, send message, confirm "Sent", then advance to the next!
             </div>
           </div>
-          <button className="btn btn-secondary btn-xs" onClick={onClose}>
-            ✕
+          <button className="modal-close" onClick={onClose}>
+            &times;
           </button>
         </div>
 
-        {/* Stats Strip */}
+        {/* Progress Tracker */}
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '8px',
-            marginBottom: '16px',
+            marginBottom: '14px',
             background: 'var(--bg-subtle)',
-            padding: '12px',
-            borderRadius: 'var(--radius-md)',
             border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '10px 14px',
           }}
         >
-          <div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-              Pending Unsent
-            </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text)' }}>
-              {unsentLeads.length}
-            </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '0.76rem',
+              fontWeight: 600,
+              marginBottom: '6px',
+            }}
+          >
+            <span style={{ color: 'var(--terracotta)' }}>
+              {total === 0 || currentIndex >= total
+                ? 'Queue Complete'
+                : `Client ${currentIndex + 1} of ${total}`}
+            </span>
+            <span>
+              {progressPct}% Completed ({sentIds.length} Sent)
+            </span>
           </div>
-          <div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-              Selected
-            </div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--sage-green)' }}>
-              {selectedIds.length}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-              Target Pipeline
-            </div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--terracotta)' }}>
-              ₹{selectedTotalValue.toLocaleString('en-IN')}
-            </div>
+          <div
+            style={{
+              height: '6px',
+              background: 'var(--border-subtle)',
+              borderRadius: '3px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.max(5, progressPct)}%`,
+                background: '#25D366',
+                transition: 'width 0.25s ease',
+              }}
+            />
           </div>
         </div>
 
-        {/* Progress Bar */}
-        {progress.total > 0 && (
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '4px' }}>
-              <span style={{ fontWeight: 600 }}>{progress.status}</span>
-              <span>
-                {progress.current} / {progress.total}
+        {/* Finished View */}
+        {total === 0 || currentIndex >= total ? (
+          <div style={{ textAlign: 'center', padding: '36px 16px' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🎉</div>
+            <strong
+              style={{
+                color: 'var(--text)',
+                display: 'block',
+                fontSize: '1.05rem',
+                marginBottom: '6px',
+              }}
+            >
+              All Unsent Clients Completed!
+            </strong>
+            <p
+              style={{
+                fontSize: '0.82rem',
+                color: 'var(--text-secondary)',
+                marginBottom: '20px',
+              }}
+            >
+              You reached out to <strong>{sentIds.length}</strong> clients. Pipeline metrics
+              and timestamps have been updated.
+            </p>
+            <button className="btn btn-terracotta" onClick={onClose}>
+              Done
+            </button>
+          </div>
+        ) : (
+          /* Active Client Card */
+          <div
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '18px',
+              marginBottom: '14px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: '10px',
+                marginBottom: '10px',
+              }}
+            >
+              <div>
+                <h4
+                  style={{
+                    fontSize: '1.05rem',
+                    fontWeight: 700,
+                    margin: 0,
+                    color: 'var(--text)',
+                  }}
+                >
+                  {currentLead.business}
+                </h4>
+                <div
+                  style={{
+                    fontSize: '0.78rem',
+                    color: 'var(--text-secondary)',
+                    marginTop: '2px',
+                  }}
+                >
+                  👤 <strong>{currentLead.owner || 'Key Contact'}</strong> • 📍{' '}
+                  {currentLead.location || 'Gurugram'} • 🏷️ {currentLead.niche}
+                </div>
+              </div>
+              <span className="badge badge-emerald" style={{ fontSize: '0.78rem' }}>
+                ₹{(currentLead.deal_value || 29999).toLocaleString('en-IN')}
               </span>
             </div>
-            <div style={{ width: '100%', height: '8px', background: 'var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
+
+            <div
+              style={{
+                background: 'var(--bg-subtle)',
+                padding: '9px 12px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-subtle)',
+                marginBottom: '12px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                Direct WhatsApp Number:
+              </span>
+              <strong
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.88rem',
+                  color: 'var(--text)',
+                }}
+              >
+                {formatWhatsAppPhone(currentLead.phone)}
+              </strong>
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
               <div
                 style={{
-                  width: `${(progress.current / progress.total) * 100}%`,
-                  height: '100%',
-                  background: 'var(--sage-green)',
-                  transition: 'width 0.2s ease',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '5px',
                 }}
+              >
+                <label
+                  style={{
+                    fontSize: '0.74rem',
+                    fontWeight: 600,
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  Personalized Pitch (Editable):
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-xs"
+                  onClick={() => setEditedPitch(defaultPitch)}
+                  style={{ fontSize: '0.68rem', padding: '2px 7px' }}
+                >
+                  Reset
+                </button>
+              </div>
+              <textarea
+                rows={3}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  fontSize: '0.82rem',
+                  lineHeight: '1.45',
+                  padding: '9px 11px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface)',
+                  color: 'var(--text)',
+                  resize: 'vertical',
+                }}
+                value={activePitch}
+                onChange={(e) => setEditedPitch(e.target.value)}
               />
+            </div>
+
+            {/* Steps */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                className="btn btn-wa-blast"
+                onClick={handleOpenWhatsApp}
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  fontSize: '0.9rem',
+                  padding: '11px 16px',
+                }}
+              >
+                <span>💬</span> Step 1: Open WhatsApp for This Client ↗
+              </button>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-terracotta"
+                  onClick={handleConfirmSent}
+                  style={{
+                    justifyContent: 'center',
+                    fontSize: '0.84rem',
+                    padding: '10px',
+                    boxShadow: openedCurrent
+                      ? '0 0 14px rgba(217, 119, 87, 0.7)'
+                      : undefined,
+                  }}
+                >
+                  <span>✓</span> {openedCurrent ? 'Sent! Next Client ➔' : 'Step 2: Sent! Next Client ➔'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleSkip}
+                  style={{
+                    justifyContent: 'center',
+                    fontSize: '0.82rem',
+                    padding: '10px',
+                  }}
+                >
+                  Skip ⏭️
+                </button>
+              </div>
             </div>
           </div>
         )}
-
-        {/* Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={selectedIds.length === unsentLeads.length && unsentLeads.length > 0}
-              onChange={(e) => toggleSelectAll(e.target.checked)}
-            />
-            Select All ({unsentLeads.length})
-          </label>
-        </div>
-
-        {/* Leads Checklist */}
-        <div
-          style={{
-            maxHeight: '320px',
-            overflowY: 'auto',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '16px',
-          }}
-        >
-          {unsentLeads.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
-              🎉 All prospects in your database have already received their pitches!
-            </div>
-          ) : (
-            unsentLeads.map((lead) => (
-              <div
-                key={lead.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 14px',
-                  borderBottom: '1px solid var(--border-subtle)',
-                  background: selectedIds.includes(lead.id) ? 'var(--bg-subtle)' : 'transparent',
-                }}
-              >
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, cursor: 'pointer', minWidth: 0 }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(lead.id)}
-                    onChange={() => toggleLead(lead.id)}
-                  />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {lead.business}
-                    </div>
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
-                      {lead.owner ? `${lead.owner} • ` : ''}
-                      {lead.niche} • {lead.phone}
-                    </div>
-                  </div>
-                </label>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
-                  <span style={{ fontSize: '0.78rem', fontFamily: 'var(--font-mono)', color: 'var(--terracotta)', fontWeight: 600 }}>
-                    ₹{(lead.deal_value || 29999).toLocaleString('en-IN')}
-                  </span>
-                  {dispatchedMap[lead.id] && (
-                    <a
-                      href={dispatchedMap[lead.id]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: '0.72rem', color: 'var(--sage-green)', fontWeight: 600 }}
-                    >
-                      ✓ Dispatched ↗
-                    </a>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          <button className="btn btn-secondary btn-sm" onClick={onClose}>
-            Close
-          </button>
-          <button
-            className="btn btn-secondary btn-sm"
-            disabled={selectedIds.length === 0 || isDispatching}
-            onClick={() => startDispatch(false)}
-            title="Mark as Pitch Sent without opening browser tabs"
-          >
-            Mark as Sent (No Tabs)
-          </button>
-          <button
-            className="btn btn-wa-blast btn-sm"
-            disabled={selectedIds.length === 0 || isDispatching}
-            onClick={() => startDispatch(true)}
-          >
-            {isDispatching ? '⏳ Dispatching...' : `⚡ Launch Outreach (${selectedIds.length})`}
-          </button>
-        </div>
       </div>
     </div>
   );
 };
-

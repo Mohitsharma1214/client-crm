@@ -647,20 +647,181 @@ async def get_analytics(request):
     })
 
 
+def _load_env_secret(key_name):
+    """Safely retrieves API keys from env or local portfolio .env files without hardcoding secrets."""
+    val = os.environ.get(key_name) or os.environ.get(f"VITE_{key_name}")
+    if val:
+        return val
+    search_paths = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env.local"),
+        os.path.expanduser("~/Desktop/Portfolio/.env"),
+    ]
+    for p in search_paths:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith(f"{key_name}=") or line.startswith(f"VITE_{key_name}="):
+                            extracted = line.split("=", 1)[1].strip().strip('"').strip("'")
+                            if extracted and not extracted.startswith("your_"):
+                                return extracted
+            except Exception:
+                pass
+    return ""
+
+
+GROQ_API_KEY = _load_env_secret("GROQ_API_KEY")
+GEMINI_API_KEY = _load_env_secret("GEMINI_API_KEY")
+
+
+async def copilot_chat(request):
+    """AI CRM Manager Copilot endpoint using Groq Qwen (from Portfolio .env)."""
+    data = await request.json()
+    user_msg = data.get("message", "").strip()
+    history = data.get("history", [])
+    if not user_msg:
+        return JSONResponse({"error": "Empty message"}, status_code=400)
+
+    # Load live context
+    prospects = load_prospects()
+    total = len(prospects)
+    sent = sum(1 for p in prospects if p.get("stage") not in ["PITCH_READY", "RESEARCHED", None, ""])
+    replied = sum(1 for p in prospects if p.get("has_replied") or p.get("stage") in ["REPLIED", "DEMO_SHARED", "CALL_BOOKED", "CLOSED_WON"])
+    discussion = sum(1 for p in prospects if p.get("stage") in ["DEMO_SHARED", "CALL_BOOKED"])
+    won = sum(1 for p in prospects if p.get("stage") == "CLOSED_WON")
+    pipeline_val = sum(int(p.get("deal_value") or 29999) for p in prospects if p.get("stage") in ["REPLIED", "DEMO_SHARED", "CALL_BOOKED"])
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    overdue_clients = []
+    for p in prospects:
+        nfu = p.get("next_follow_up")
+        if nfu and nfu < today_str and p.get("stage") not in ["CLOSED_WON", "LOST"]:
+            overdue_clients.append(f"{p.get('business')} ({p.get('owner') or 'Key Contact'}, {p.get('niche')})")
+
+    system_context = f"""You are the Executive AI CRM Manager for Client CRM.
+You manage a high-ticket B2B outreach pipeline selling 24/7 AI Receptionists & WhatsApp Booking Assistants for clinics, aesthetic doctors, and luxury design firms in Gurugram and Delhi NCR.
+
+Pricing: ₹29,999 one-time setup + ₹4,999/month maintenance.
+Live CRM Snapshot:
+- Total Prospects: {total}
+- Pitched (Awaiting/Replied): {sent}
+- Client Replies: {replied}
+- In Active Discussion: {discussion}
+- Closed Won: {won}
+- Active Negotiation Pipeline: ₹{pipeline_val:,}
+- Overdue Follow-ups ({len(overdue_clients)}): {', '.join(overdue_clients[:5]) if overdue_clients else 'None'}
+- Top Niches: Cosmetic Dentistry, Dermatology & Aesthetics, Luxury Interior Design, Real Estate.
+
+Guidelines:
+- Give direct, high-leverage executive advice with numbers, scripts, and step-by-step tactics.
+- If the user asks for a WhatsApp pitch, provide a short, conversational, high-converting copy-paste message.
+- If asked about objections (price, 'already have staff'), give bulletproof objection-handling responses.
+- Keep responses concise, structured, and formatted with markdown."""
+
+    messages = [{"role": "system", "content": system_context}]
+    for h in history[-6:]:
+        messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+    messages.append({"role": "user", "content": user_msg})
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+                json={
+                    "model": "qwen/qwen3.8-27b",
+                    "messages": messages,
+                    "temperature": 0.7,
+                    "max_tokens": 400
+                }
+            )
+            res_data = res.json()
+            reply = res_data["choices"][0]["message"]["content"]
+            return JSONResponse({"status": "success", "reply": reply, "model": "qwen/qwen3.8-27b"})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
 async def parse_raw_info(request):
-    """Auto-extracts business info from raw pasted text, Google Maps details, or URLs."""
+    """Auto-extracts business info from raw pasted text, Google Maps links, or visiting cards using Groq LLM with regex fallback."""
+    import urllib.parse
     data = await request.json()
     raw = data.get("text", "").strip()
     if not raw:
         return JSONResponse({"status": "error", "message": "No text provided"}, status_code=400)
 
+    resolved_info = raw
+    # 1. Expand Google Maps short links or place URLs
+    url_match = re.search(r'https?://[^\s]+', raw)
+    if url_match:
+        url = url_match.group(0).rstrip('.,;()')
+        if any(k in url for k in ["maps.app.goo.gl", "google.com/maps", "goo.gl/maps"]):
+            try:
+                async with httpx.AsyncClient(follow_redirects=True, timeout=6.0) as client:
+                    resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+                    final_url = str(resp.url)
+                    place_match = re.search(r'/maps/place/([^/@?]+)', final_url)
+                    if place_match:
+                        place_name = urllib.parse.unquote_plus(place_match.group(1))
+                        resolved_info += f"\nGoogle Maps Place Name: {place_name}"
+                    # Check page title
+                    title_match = re.search(r'<title>([^<]+)</title>', resp.text, re.IGNORECASE)
+                    if title_match:
+                        t = title_match.group(1).replace("- Google Maps", "").strip()
+                        if t and not t.lower().startswith("google"):
+                            resolved_info += f"\nGoogle Maps Title: {t}"
+            except Exception as e:
+                print("Google maps expand warning:", e)
+
+    # 2. Try Groq Qwen LLM
+    try:
+        prompt = f"""You are a CRM parser assistant. Given the following raw text or Google Maps info, extract client details into pure JSON.
+Ignore any Google Maps domain (google.com, goo.gl) for the website field.
+Output strictly valid JSON with no markdown wrapping, matching this schema:
+{{
+  "business": "Business Name",
+  "owner": "Doctor or Founder name or empty",
+  "phone": "Phone number or empty",
+  "website": "Official website or empty",
+  "location": "City or locality (e.g. Gurugram)",
+  "niche": "Cosmetic Dentistry & Implants" | "Clinical Dermatology & Aesthetics" | "Luxury Interior Design" | "Luxury Real Estate" | "Luxury Salon & Spa",
+  "deal_value": 29999,
+  "weakness": "1-sentence pain point (e.g. missing 24/7 instant appointment booking)",
+  "pitch": "1-sentence custom WhatsApp pitch for the owner"
+}}
+
+Raw Input:
+{resolved_info}"""
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+                json={
+                    "model": "qwen/qwen3.8-27b",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.2
+                }
+            )
+            content = res.json()["choices"][0]["message"]["content"].strip()
+            if content.startswith("```"):
+                content = re.sub(r"^```[a-z]*\n", "", content)
+                content = re.sub(r"\n```$", "", content)
+            extracted = json.loads(content)
+            return JSONResponse({"status": "success", "extracted": extracted, "source": "groq_qwen"})
+    except Exception as llm_err:
+        print("Groq parser fallback triggered:", llm_err)
+
+    # 3. Fallback: Rule-based regex extraction
     extracted = {
         "business": "",
         "owner": "",
         "phone": "",
         "website": "",
-        "location": "",
-        "niche": "Clinic",
+        "location": "Gurugram",
+        "niche": "Cosmetic Dentistry & Implants",
         "deal_value": 29999,
         "weakness": "Missing 24/7 instant WhatsApp lead capture on mobile website."
     }
@@ -670,10 +831,12 @@ async def parse_raw_info(request):
     if phone_match:
         extracted["phone"] = phone_match.group(0).strip()
 
-    # Extract Website / URL
+    # Extract Website (excluding google domains)
     web_match = re.search(r'(?:https?://)?(?:www\.)?([a-zA-Z0-9-]+\.(?:com|in|org|io|co|net|clinic)[a-zA-Z0-9/_.-]*)', raw, re.IGNORECASE)
     if web_match:
-        extracted["website"] = web_match.group(1).strip()
+        candidate_web = web_match.group(1).strip()
+        if not any(d in candidate_web.lower() for d in ["google.com", "goo.gl", "maps"]):
+            extracted["website"] = candidate_web
 
     # Extract Doctor / Owner Name
     owner_match = re.search(r'(?:Dr\.|Dr|Doctor|Prof\.|Architect)\s+([A-Za-z\s&.]+?)(?=\n|,|\(|\-|$)', raw, re.IGNORECASE)
@@ -685,18 +848,19 @@ async def parse_raw_info(request):
     if lines:
         first_line = lines[0]
         first_line = re.sub(r'^(Google Maps|Place|Business|Location):\s*', '', first_line, flags=re.IGNORECASE)
-        # If doctor name was on the first line, clean it from the business title
-        if extracted["owner"] and extracted["owner"] in first_line:
-            b_cand = first_line.split(extracted["owner"])[0].strip().strip("-–•,")
-            if b_cand:
-                first_line = b_cand
-        # If phone was on the same line, clean it
-        if extracted["phone"] and extracted["phone"] in first_line:
-            first_line = first_line.split(extracted["phone"])[0].strip().strip("-–•,")
-        extracted["business"] = first_line[:60].strip()
+        if not first_line.startswith("http"):
+            if extracted["owner"] and extracted["owner"] in first_line:
+                b_cand = first_line.split(extracted["owner"])[0].strip().strip("-–•,")
+                if b_cand:
+                    first_line = b_cand
+            if extracted["phone"] and extracted["phone"] in first_line:
+                first_line = first_line.split(extracted["phone"])[0].strip().strip("-–•,")
+            extracted["business"] = first_line[:60].strip()
+        elif "Google Maps Place Name:" in resolved_info:
+            extracted["business"] = resolved_info.split("Google Maps Place Name:")[1].strip().split("\n")[0][:60]
 
     # Detect Niche
-    lower_raw = raw.lower()
+    lower_raw = (raw + " " + resolved_info).lower()
     if any(k in lower_raw for k in ["dental", "dentist", "teeth", "implant", "smile"]):
         extracted["niche"] = "Cosmetic Dentistry & Implants"
     elif any(k in lower_raw for k in ["derma", "skin", "aesthetic", "laser", "hair", "hydra"]):
@@ -708,17 +872,11 @@ async def parse_raw_info(request):
     elif any(k in lower_raw for k in ["salon", "spa", "grooming", "barber"]):
         extracted["niche"] = "Luxury Salon & Spa"
 
-    # Detect Location
-    for city in ["Gurugram", "Gurgaon", "Delhi", "South Delhi", "Noida", "Mumbai", "Bengaluru", "Bangalore", "Saket", "DLF", "Golf Course Road", "Indirapuram"]:
-        if city.lower() in lower_raw:
-            extracted["location"] = city
-            break
-
     b_name = extracted["business"] or "your business"
     o_name = extracted["owner"] or "there"
     extracted["pitch"] = f"Hi {o_name}! Admiring your work at {b_name}. Quick question: would you be open to an automated 24/7 AI booking assistant on WhatsApp for your inquiries?"
 
-    return JSONResponse({"status": "success", "extracted": extracted})
+    return JSONResponse({"status": "success", "extracted": extracted, "source": "regex_fallback"})
 
 
 async def download_react_zip(request):
@@ -758,6 +916,7 @@ routes = [
     Route("/api/prospects/quick-reply", quick_reply, methods=["POST"]),
     Route("/api/prospects/analytics", get_analytics, methods=["GET"]),
     Route("/api/prospects/parse-info", parse_raw_info, methods=["POST"]),
+    Route("/api/ai/copilot", copilot_chat, methods=["POST"]),
     Mount("/static", app=StaticFiles(directory=static_dir), name="static")
 ]
 
