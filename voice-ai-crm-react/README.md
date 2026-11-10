@@ -1,4 +1,4 @@
-# 🚀 Voice AI Client Acquisition Pipeline (React + TypeScript)
+# 🚀 Client CRM (React + TypeScript)
 
 A standalone, production-ready React 18 + TypeScript + Vite CRM engineered with an editorial Anthropic warm-ivory design system, tactile drag-and-drop Kanban pipeline, 1-Click WhatsApp outreach dispatcher, smart Google Maps contact card parser, and niche conversion funnels.
 

@@ -1,4 +1,4 @@
-# 🎙️ Voice AI — Enterprise Client Acquisition OS & Demo Hub
+# 🎙️ Client CRM — Enterprise Client Acquisition OS & Demo Hub
 
 An enterprise-grade client acquisition pipeline, 24/7 AI Receptionist demo hub, and outreach command center built for high-ticket service practices (dentistry, dermatology, aesthetic clinics, plastic surgery, and luxury architecture).
 
@@ -53,8 +53,8 @@ An enterprise-grade client acquisition pipeline, 24/7 AI Receptionist demo hub, 
 ### 1. Python Backend & Live Dashboard
 ```bash
 # Clone the repository
-git clone https://github.com/Mohitsharma1214/Voice-AI.git
-cd Voice-AI
+git clone https://github.com/Mohitsharma1214/client-crm.git
+cd client-crm
 
 # Create virtual environment & install dependencies
 python3 -m venv .venv
@@ -79,3 +79,4 @@ npm install
 npm run dev
 ```
 Open **`http://localhost:3000`** in your browser.
+

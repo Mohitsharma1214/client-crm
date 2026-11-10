@@ -47,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
         }}>*</div>
         <div>
           <div style={{ fontWeight: 700, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>Client Status Console</span>
+            <span>Client CRM</span>
             <span style={{
               fontSize: '0.62rem',
               fontWeight: 700,

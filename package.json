@@ -1,8 +1,8 @@
 {
-  "name": "voice-ai-pipeline",
+  "name": "client-crm",
   "version": "1.0.0",
   "type": "module",
-  "description": "Client Acquisition OS & AI Demo Hub on Neon",
+  "description": "Client CRM Acquisition OS & AI Demo Hub on Neon",
   "scripts": {
     "build": "node build.js",
     "start": ".venv/bin/python3 app.py",

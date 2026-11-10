@@ -238,7 +238,7 @@ export const App: React.FC = () => {
         <div className="page-header">
           <div>
             <div className="page-eyebrow">Enterprise Client Acquisition Pipeline</div>
-            <h1 className="page-title">Voice AI Client Command Center</h1>
+            <h1 className="page-title">Client CRM Command Center</h1>
             <p className="page-desc">
               Gurugram & Delhi NCR verified high-ticket healthcare, aesthetics, and design practices.
             </p>
