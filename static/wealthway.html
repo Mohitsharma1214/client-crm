@@ -1106,7 +1106,13 @@
       const phone = document.getElementById('wtPhone').value.trim();
       const date = document.getElementById('wtDate').value.trim() || 'This week';
 
-      const waMsg = `Hi Shobhit! I am interested in scheduling a private VIP walkthrough for *${prop}*.\n\n👤 Name: ${name}\n📞 WhatsApp: ${phone}\n🗓️ Preferred Time: ${date}\n\nInquiry routed via Wealthway 24/7 AI Concierge.`;
+      const waMsg = `Hi Shobhit! I am interested in scheduling a private VIP walkthrough for *${prop}*.
+
+• Name: ${name}
+• WhatsApp: ${phone}
+• Preferred Time: ${date}
+
+Inquiry routed via Wealthway 24/7 AI Concierge.`;
       const waUrl = `https://wa.me/919643810087?text=${encodeURIComponent(waMsg)}`;
       
       closeWalkthroughModal();
