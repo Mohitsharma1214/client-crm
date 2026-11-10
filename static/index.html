@@ -2635,6 +2635,34 @@
 <body>
 
   <!-- ========================================================
+       SECURITY GATE: PASSCODE AUTHENTICATION
+       ======================================================== -->
+  <div id="crmAuthGate" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg); z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--shadow-modal); max-width: 420px; width: 100%; padding: 40px 32px; text-align: center;">
+      <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--terracotta-soft); color: var(--terracotta); display: inline-flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 18px; border: 1px solid var(--terracotta-border);">
+        🔐
+      </div>
+      <h2 style="font-family: var(--font-serif); font-size: 24px; margin-bottom: 8px; color: var(--text);">Private Access Gate</h2>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5;">
+        Enter your master passcode to access the Client Acquisition CRM & pipeline console.
+      </p>
+
+      <form id="crmAuthForm" onsubmit="handleCrmLogin(event)">
+        <div style="margin-bottom: 16px; text-align: left;">
+          <label style="display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 8px;">Master Key / Passcode</label>
+          <input type="password" id="crmPasscodeInput" class="form-input" placeholder="••••••••" required autofocus style="width: 100%; padding: 12px 14px; font-size: 16px; border-radius: var(--radius-md); letter-spacing: 2px;">
+        </div>
+        <div id="crmAuthError" style="color: var(--rose-danger); font-size: 12px; margin-bottom: 14px; display: none; font-weight: 600;">
+          ⚠️ Incorrect access key. Please try again.
+        </div>
+        <button type="submit" class="btn btn-terracotta" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px; font-weight: 600;">
+          Unlock Console ➔
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================
        TOP NAVBAR
        ======================================================== -->
   <header>
@@ -2671,6 +2699,11 @@
       <!-- Theme Switcher (Anthropic Warm Ivory <-> Dark) -->
       <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
         🌓
+      </button>
+
+      <!-- Private Lock Button -->
+      <button class="btn btn-secondary btn-sm" onclick="crmLogout()" title="Lock CRM Dashboard">
+        🔒 Lock
       </button>
 
       <!-- Add New Client CTA -->
@@ -5217,9 +5250,54 @@
       }
     }
 
+    /* ========================================================
+       FEATURE: PASSCODE LOGIN & PRIVACY GATE
+       ======================================================== */
+    const CRM_PASSCODES = ['mohit2026', 'crm2026', '2026', 'admin'];
+
+    function isCrmAuthenticated() {
+      return localStorage.getItem('crm_auth_unlocked') === 'true';
+    }
+
+    function checkCrmAuthOnLoad() {
+      const gate = document.getElementById('crmAuthGate');
+      if (isCrmAuthenticated()) {
+        if (gate) gate.style.display = 'none';
+        return true;
+      } else {
+        if (gate) gate.style.display = 'flex';
+        return false;
+      }
+    }
+
+    function handleCrmLogin(e) {
+      e.preventDefault();
+      const input = document.getElementById('crmPasscodeInput');
+      const errorEl = document.getElementById('crmAuthError');
+      const val = input.value.trim();
+
+      if (CRM_PASSCODES.includes(val)) {
+        localStorage.setItem('crm_auth_unlocked', 'true');
+        document.getElementById('crmAuthGate').style.display = 'none';
+        showToast("🔓 Welcome back! Console unlocked.");
+        fetchLeads();
+      } else {
+        if (errorEl) errorEl.style.display = 'block';
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    function crmLogout() {
+      localStorage.removeItem('crm_auth_unlocked');
+      window.location.reload();
+    }
+
     // Initialize application on load
     initTheme();
-    fetchLeads();
+    if (checkCrmAuthOnLoad()) {
+      fetchLeads();
+    }
   </script>
 
   <!-- ========================================================
