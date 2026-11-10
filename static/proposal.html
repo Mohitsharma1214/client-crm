@@ -40,14 +40,15 @@
 
     /* Print & A4 Page Sizing */
     @page {
-      size: A4;
+      size: A4 portrait;
       margin: 0;
     }
 
     .page {
       width: 210mm;
-      min-height: 297mm;
-      padding: 24mm 22mm;
+      height: 297mm;
+      max-height: 297mm;
+      padding: 20mm 20mm;
       margin: 0 auto;
       background: var(--bg-dark);
       position: relative;
@@ -55,8 +56,16 @@
       flex-direction: column;
       justify-content: space-between;
       page-break-after: always;
+      break-after: page;
+      page-break-inside: avoid;
+      break-inside: avoid;
       overflow: hidden;
-      border-bottom: 1px dashed var(--border-subtle);
+    }
+
+    .page:last-of-type,
+    .page:last-child {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
     }
 
     @media screen {
@@ -103,16 +112,28 @@
     @media print {
       body {
         padding: 0;
-        background: #000;
+        margin: 0;
+        background: var(--bg-dark);
       }
       .web-download-bar {
         display: none !important;
       }
       .page {
         margin: 0;
+        padding: 20mm 20mm;
+        width: 210mm;
+        height: 297mm;
+        max-height: 297mm;
         border: none;
         box-shadow: none;
         page-break-after: always;
+        break-after: page;
+        overflow: hidden;
+      }
+      .page:last-of-type,
+      .page:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
       }
     }
 
@@ -593,3 +614,4 @@
 
 </body>
 </html>
+
