@@ -129,8 +129,15 @@ def load_json_prospects():
     return []
 
 def save_json_prospects(prospects):
-    with open(PROSPECTS_FILE, "w", encoding="utf-8") as f:
-        json.dump(prospects, f, indent=2)
+    try:
+        with open(PROSPECTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(prospects, f, indent=2)
+    except OSError:
+        try:
+            with open("/tmp/prospects.json", "w", encoding="utf-8") as f:
+                json.dump(prospects, f, indent=2)
+        except Exception:
+            pass
 
 def serialize_row(row):
     """Converts a database row dict to a JSON-safe dictionary (converting datetimes/dates)."""
