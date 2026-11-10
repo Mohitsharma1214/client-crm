@@ -789,18 +789,46 @@ async def parse_raw_info(request):
                     valid_phones = [p for p in page_phones if not p.startswith("1794") and not p.startswith("794") and not p.startswith("8637")]
                     if valid_phones:
                         resolved_info += f"\nDetected Phone: {valid_phones[0]}"
+
+                # E. Automatic Web Directory Enrichment if phone is not in the link
+                if "Detected Phone:" not in resolved_info:
+                    target_name = ""
+                    if "Google Share Business Query:" in resolved_info:
+                        target_name = resolved_info.split("Google Share Business Query:")[1].strip().split("\n")[0]
+                    elif "Google Maps Place Name:" in resolved_info:
+                        target_name = resolved_info.split("Google Maps Place Name:")[1].strip().split("\n")[0]
+                    elif "Page Title:" in resolved_info:
+                        target_name = resolved_info.split("Page Title:")[1].strip().split("\n")[0]
+
+                    if target_name:
+                        try:
+                            search_q = f"{target_name} phone"
+                            ddg_url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(search_q)}"
+                            async with httpx.AsyncClient(timeout=5.0, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}) as s_client:
+                                s_resp = await s_client.get(ddg_url)
+                                snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', s_resp.text, re.DOTALL)
+                                clean_snips = [re.sub(r'<[^>]+>', '', s).strip() for s in snippets[:4]]
+                                if clean_snips:
+                                    snippet_text = "\n".join(clean_snips)
+                                    resolved_info += f"\nPublic Directory & Instagram Contact Info:\n{snippet_text}"
+                                    snip_phones = re.findall(r'(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', snippet_text)
+                                    if snip_phones:
+                                        resolved_info += f"\nDetected Phone from Directory: {snip_phones[0]}"
+                        except Exception as e_search:
+                            print("Directory enrichment search warning:", e_search)
         except Exception as e:
             print("URL expand warning:", e)
 
     # 2. Try Groq Qwen LLM
     try:
-        prompt = f"""You are an elite B2B CRM AI extractor and copywriter for luxury clinics and aesthetic businesses in Gurugram/NCR.
-Given the following raw text or Google Maps / Search share link:
+        prompt = f"""You are an elite B2B CRM AI extractor and copywriter for luxury clinics and aesthetic businesses in Gurugram/NCR and India.
+Given the following raw text, Google Maps link, or public directory snippets:
 1. Extract client business details into clean JSON.
-2. If a Google share link or place name is present (e.g. 'Sakshi Dental Clinic'), accurately extract that as the business name!
-3. If an owner/doctor is named or strongly implied (e.g. 'Dr. Sakshi' from 'Sakshi Dental Clinic'), set owner accordingly (e.g. 'Dr. Sakshi'). If unknown, use 'Dr. & Team'.
-4. Do NOT use google.com, goo.gl, or share.google as the website. If no external clinic website is found, leave website empty "".
-5. Generate a hyper-personalized Initial WhatsApp Pitch AND custom multi-day follow-up messages tailored specifically to this business and founder.
+2. If a Google share link or place name is present (e.g. 'Ekdant Dental Clinic'), accurately extract that as the business name!
+3. If phone is detected in the direct link or directory snippets, format it cleanly (e.g. +91 96446 68847). Only leave empty if not present.
+4. If an owner/doctor is named or strongly implied (e.g. 'Dr. Sakshi' from 'Sakshi Dental Clinic'), set owner accordingly. If unknown, use 'Dr. & Team'.
+5. Do NOT use google.com, goo.gl, or share.google as the website. If no external clinic website is found, leave website empty "".
+6. Generate a hyper-personalized Initial WhatsApp Pitch AND custom multi-day follow-up messages tailored specifically to this business and founder.
 
 Output strictly valid JSON with no markdown formatting:
 {{
@@ -808,7 +836,7 @@ Output strictly valid JSON with no markdown formatting:
   "owner": "Doctor or Founder name",
   "phone": "Phone number or empty",
   "website": "Official website or empty",
-  "location": "City or locality (e.g. Gurugram)",
+  "location": "City or locality (e.g. Gurugram or Berasia)",
   "niche": "Cosmetic Dentistry & Implants" | "Clinical Dermatology & Aesthetics" | "Luxury Interior Design" | "Luxury Real Estate" | "Luxury Salon & Spa",
   "deal_value": 29999,
   "weakness": "1-sentence specific clinic pain point (e.g. lost patient bookings after 8 PM)",
@@ -856,6 +884,8 @@ Raw Input:
     phone_match = re.search(r'(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', raw)
     if phone_match:
         extracted["phone"] = phone_match.group(0).strip()
+    elif "Detected Phone from Directory:" in resolved_info:
+        extracted["phone"] = resolved_info.split("Detected Phone from Directory:")[1].strip().split("\n")[0]
 
     # Extract Website (excluding google domains)
     web_match = re.search(r'(?:https?://)?(?:www\.)?([a-zA-Z0-9-]+\.(?:com|in|org|io|co|net|clinic)[a-zA-Z0-9/_.-]*)', raw, re.IGNORECASE)
