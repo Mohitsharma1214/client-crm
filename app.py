@@ -685,7 +685,7 @@ async def copilot_chat(request):
         return JSONResponse({"error": "Empty message"}, status_code=400)
 
     # Load live context
-    prospects = load_prospects()
+    prospects = db.get_all_prospects()
     total = len(prospects)
     sent = sum(1 for p in prospects if p.get("stage") not in ["PITCH_READY", "RESEARCHED", None, ""])
     replied = sum(1 for p in prospects if p.get("has_replied") or p.get("stage") in ["REPLIED", "DEMO_SHARED", "CALL_BOOKED", "CLOSED_WON"])
