@@ -2999,8 +2999,16 @@
             <input type="text" id="newLeadOwner" class="form-input" placeholder="e.g. Dr. Aryan Malik">
           </div>
           <div class="form-group">
-            <label class="form-label">Phone / WhatsApp *</label>
-            <input type="text" id="newLeadPhone" class="form-input" required placeholder="+91 98765 43210">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" style="margin-bottom: 0;">Phone / WhatsApp *</label>
+              <button type="button" id="googleLookupBtn" class="btn btn-secondary" style="display: none; padding: 2px 8px; font-size: 11px; height: auto;" onclick="openGoogleLookup()">
+                <i class="fab fa-google"></i> View on Google ↗
+              </button>
+            </div>
+            <input type="text" id="newLeadPhone" class="form-input" required placeholder="+91 98765 43210" oninput="formatIndianPhone(this)">
+            <div id="phoneHelperHint" style="display: none; font-size: 11px; margin-top: 5px; color: #f59e0b; line-height: 1.4;">
+              ⚠️ Google hides phone numbers from scrapers. Click <a href="javascript:void(0)" onclick="openGoogleLookup()" style="color: #60a5fa; text-decoration: underline; font-weight: 600;">View on Google ↗</a> to see clinic's phone number, then paste here.
+            </div>
           </div>
         </div>
 
@@ -4309,6 +4317,32 @@
     /* Modal Operations */
     function openAddLeadModal() {
       document.getElementById('addLeadModal').classList.add('open');
+      const hint = document.getElementById('phoneHelperHint');
+      if (hint) hint.style.display = 'none';
+      const lookupBtn = document.getElementById('googleLookupBtn');
+      if (lookupBtn) lookupBtn.style.display = 'none';
+    }
+
+    function formatIndianPhone(input) {
+      let val = input.value;
+      let digits = val.replace(/\D/g, '');
+      if (digits.startsWith('91') && digits.length > 10) {
+        digits = digits.slice(2);
+      } else if (digits.startsWith('0') && digits.length > 10) {
+        digits = digits.slice(1);
+      }
+      if (digits.length === 10) {
+        input.value = `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+        const hint = document.getElementById('phoneHelperHint');
+        if (hint) hint.style.display = 'none';
+      }
+    }
+
+    function openGoogleLookup() {
+      const biz = document.getElementById('newLeadBusiness').value.trim();
+      const loc = document.getElementById('newLeadLocation').value.trim();
+      const query = encodeURIComponent(`${biz} ${loc} phone contact number`.trim());
+      window.open(`https://www.google.com/search?q=${query}`, '_blank');
     }
 
     function openDbModal() {
@@ -4891,7 +4925,19 @@
           const ex = data.extracted;
           if (ex.business) document.getElementById('newLeadBusiness').value = ex.business;
           if (ex.owner) document.getElementById('newLeadOwner').value = ex.owner;
-          if (ex.phone) document.getElementById('newLeadPhone').value = ex.phone;
+          if (ex.phone) {
+            document.getElementById('newLeadPhone').value = ex.phone;
+            const hint = document.getElementById('phoneHelperHint');
+            if (hint) hint.style.display = 'none';
+            const lookupBtn = document.getElementById('googleLookupBtn');
+            if (lookupBtn) lookupBtn.style.display = 'none';
+          } else {
+            document.getElementById('newLeadPhone').value = '';
+            const hint = document.getElementById('phoneHelperHint');
+            if (hint) hint.style.display = 'block';
+            const lookupBtn = document.getElementById('googleLookupBtn');
+            if (lookupBtn) lookupBtn.style.display = 'inline-flex';
+          }
           if (ex.website) document.getElementById('newLeadWebsite').value = ex.website;
           if (ex.niche) document.getElementById('newLeadNiche').value = ex.niche;
           if (ex.location) document.getElementById('newLeadLocation').value = ex.location;

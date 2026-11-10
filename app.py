@@ -753,6 +753,15 @@ async def parse_raw_info(request):
         return JSONResponse({"status": "error", "message": "No text provided"}, status_code=400)
 
     resolved_info = raw
+
+    # 0. Direct check for phone number in user's raw pasted text
+    direct_phones = re.findall(r'(?:(?:\+91|0)[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', raw)
+    if direct_phones:
+        valid_direct = [p for p in direct_phones if not p.startswith(("1794", "794", "8637", "6590"))]
+        if valid_direct:
+            p_clean = re.sub(r'\D', '', valid_direct[0])[-10:]
+            resolved_info += f"\nDetected Phone: +91 {p_clean[:5]} {p_clean[5:]}"
+
     # 1. Expand Google Maps short links, share.google, or any shared URL
     url_match = re.search(r'https?://[^\s]+', raw)
     if url_match:
@@ -783,14 +792,14 @@ async def parse_raw_info(request):
                     if t and not t.lower().startswith("google") and not t.lower().startswith("404"):
                         resolved_info += f"\nPage Title: {t}"
 
-                # D. Look for phone numbers in destination page (excluding Google timestamp artifacts)
+                # D. Look for direct phone numbers in destination page (excluding Google timestamp artifacts)
                 page_phones = re.findall(r'(?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', resp.text)
                 if page_phones:
-                    valid_phones = [p for p in page_phones if not p.startswith("1794") and not p.startswith("794") and not p.startswith("8637")]
+                    valid_phones = [p for p in page_phones if not p.startswith("1794") and not p.startswith("794") and not p.startswith("8637") and not p.startswith("6590")]
                     if valid_phones:
                         resolved_info += f"\nDetected Phone: {valid_phones[0]}"
 
-                # E. Automatic Web Directory Enrichment if phone is not in the link
+                # E. Automatic Web Directory & Public Search Enrichment if phone is not in Google redirect
                 if "Detected Phone:" not in resolved_info:
                     target_name = ""
                     if "Google Share Business Query:" in resolved_info:
@@ -802,18 +811,26 @@ async def parse_raw_info(request):
 
                     if target_name:
                         try:
-                            search_q = f"{target_name} phone"
-                            ddg_url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(search_q)}"
-                            async with httpx.AsyncClient(timeout=5.0, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}) as s_client:
-                                s_resp = await s_client.get(ddg_url)
-                                snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', s_resp.text, re.DOTALL)
-                                clean_snips = [re.sub(r'<[^>]+>', '', s).strip() for s in snippets[:4]]
-                                if clean_snips:
-                                    snippet_text = "\n".join(clean_snips)
-                                    resolved_info += f"\nPublic Directory & Instagram Contact Info:\n{snippet_text}"
-                                    snip_phones = re.findall(r'(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', snippet_text)
-                                    if snip_phones:
-                                        resolved_info += f"\nDetected Phone from Directory: {snip_phones[0]}"
+                            clean_target = re.sub(r'[,.\-_]+', ' ', target_name).strip()
+                            headers = {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            }
+                            async with httpx.AsyncClient(timeout=5.0, headers=headers) as s_client:
+                                s_resp = await s_client.post('https://html.duckduckgo.com/html/', data={'q': f'{clean_target} phone'})
+                                if s_resp.status_code == 200:
+                                    snippets = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', s_resp.text, re.DOTALL)
+                                    clean_snips = [re.sub(r'<[^>]+>', '', s).strip() for s in snippets[:4]]
+                                    if clean_snips:
+                                        snippet_blob = " ".join(clean_snips)
+                                        resolved_info += f"\nPublic Directory & Social Snippets:\n{snippet_blob}"
+                                        # Look for phone with label in snippet text
+                                        snip_label_phones = re.findall(r'(?:M:|Mobile|Phone|Call|Contact|Cell|WhatsApp|Tel)[\s:]*([6-9]\d{9}|0[6-9]\d{9}|\+91[\s-]?[6-9]\d{4}[\s-]?\d{5})', snippet_blob, re.IGNORECASE)
+                                        if snip_label_phones:
+                                            raw_p = re.sub(r'\D', '', snip_label_phones[0])
+                                            if len(raw_p) >= 10:
+                                                clean_10 = raw_p[-10:]
+                                                resolved_info += f"\nDetected Phone from Directory: +91 {clean_10[:5]} {clean_10[5:]}"
                         except Exception as e_search:
                             print("Directory enrichment search warning:", e_search)
         except Exception as e:
@@ -825,7 +842,7 @@ async def parse_raw_info(request):
 Given the following raw text, Google Maps link, or public directory snippets:
 1. Extract client business details into clean JSON.
 2. If a Google share link or place name is present (e.g. 'Ekdant Dental Clinic'), accurately extract that as the business name!
-3. If phone is detected in the direct link or directory snippets, format it cleanly (e.g. +91 96446 68847). Only leave empty if not present.
+3. If a phone number is detected in the input or directory search, format it cleanly (e.g. +91 96446 68847). If no real phone number is found anywhere in the text or snippets, output empty string "" (DO NOT invent or guess a fake number).
 4. If an owner/doctor is named or strongly implied (e.g. 'Dr. Sakshi' from 'Sakshi Dental Clinic'), set owner accordingly. If unknown, use 'Dr. & Team'.
 5. Do NOT use google.com, goo.gl, or share.google as the website. If no external clinic website is found, leave website empty "".
 6. Generate a hyper-personalized Initial WhatsApp Pitch AND custom multi-day follow-up messages tailored specifically to this business and founder.
@@ -864,6 +881,20 @@ Raw Input:
                 content = re.sub(r"^```[a-z]*\n", "", content)
                 content = re.sub(r"\n```$", "", content)
             extracted = json.loads(content)
+            # Anti-hallucination check: ensure phone digits actually existed in input text or scraped data
+            if extracted.get("phone"):
+                digits = re.sub(r'\D', '', extracted["phone"])[-10:]
+                raw_digits = re.sub(r'\D', '', resolved_info)
+                if digits and digits not in raw_digits:
+                    extracted["phone"] = ""
+
+            # If phone is missing from LLM but was detected from direct input or directory, use the verified one
+            if not extracted.get("phone"):
+                for label in ["Detected Phone from Directory:", "Detected Phone:"]:
+                    if label in resolved_info:
+                        extracted["phone"] = resolved_info.split(label)[1].strip().split("\n")[0]
+                        break
+
             return JSONResponse({"status": "success", "extracted": extracted, "source": "groq_qwen"})
     except Exception as llm_err:
         print("Groq parser fallback triggered:", llm_err)
