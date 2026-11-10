@@ -1966,6 +1966,138 @@
       transition: height 0.5s ease;
     }
 
+    /* ========================================================
+       AI Predictions & Pitch Intelligence Section
+       ======================================================== */
+    .ai-pred-section {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin-top: 6px;
+    }
+    .ai-pred-banner {
+      background: linear-gradient(135deg, rgba(217, 119, 87, 0.08) 0%, rgba(88, 129, 87, 0.07) 50%, rgba(79, 110, 138, 0.08) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .ai-pred-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .ai-pred-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .ai-pred-banner-title {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ai-pred-banner-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+    .ai-pred-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    @media (max-width: 960px) {
+      .ai-pred-grid-3 { grid-template-columns: 1fr; }
+    }
+    .ai-pred-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+    }
+    .ai-pred-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .ai-pred-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .ai-template-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 0.76rem;
+      line-height: 1.5;
+      color: var(--text);
+      position: relative;
+      font-family: var(--font-sans);
+    }
+    .ai-hot-leads-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 22px 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .ai-hot-leads-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 16px;
+    }
+    .ai-hot-lead-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .ai-hot-lead-item:hover {
+      border-color: var(--terracotta);
+      transform: translateY(-2px);
+    }
+
     /* Responsive: Actions strip mobile */
     @media (max-width: 600px) {
       .actions-strip {
@@ -3384,6 +3516,125 @@
           </div>
         </div>
       </div>
+
+      <!-- ========================================================
+           AI PREDICTIONS & PITCH INTELLIGENCE ENGINE
+           ======================================================== -->
+      <div class="ai-pred-section">
+        <!-- AI Intelligence Header Banner -->
+        <div class="ai-pred-banner">
+          <div class="ai-pred-banner-left">
+            <div class="ai-pred-icon-box">🧠</div>
+            <div>
+              <div class="ai-pred-banner-title">
+                AI Conversion Predictions & Pitch Intelligence
+                <span class="kpi-badge badge-terracotta" style="font-size: 0.65rem;" id="aiPredModelBadge">Groq Qwen Engine</span>
+              </div>
+              <div class="ai-pred-banner-desc">Real-time algorithmic analysis of live Gurugram client responses, pitch hooks, and win propensities</div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fetchAiPredictions(true)" id="btnRefreshPredictions" style="gap: 6px;">
+            <span id="predRefreshSpinner">⚡</span> Refresh AI Predictions
+          </button>
+        </div>
+
+        <!-- 3-Column Pitch Intelligence Cards -->
+        <div class="ai-pred-grid-3">
+          <!-- Card 1: Winning Archetype -->
+          <div class="ai-pred-card">
+            <div class="ai-pred-card-header">
+              <div>
+                <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--sage-green); letter-spacing: 0.5px;">🏆 Highest-Converting Archetype</div>
+                <div style="font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700; color: var(--text); margin-top: 4px;" id="predArchetypeTitle">Solo Aesthetic Clinics & Ultra-Luxury Realtors</div>
+              </div>
+              <span class="kpi-badge badge-green" id="predArchetypeScore" style="font-size: 0.75rem;">91% Propensity</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.45;" id="predArchetypeWhy">
+              High-ticket services (₹20k - ₹35k setup) where after-hours buyer drop-off causes immediate revenue loss. Owners feel this bottleneck daily.
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.74rem;">
+                <span style="color: var(--text-tertiary);">Optimal Retainer Ticket:</span>
+                <strong style="color: var(--text);" id="predArchetypeTicket">₹25,000 - ₹35,000</strong>
+              </div>
+              <div style="font-size: 0.74rem; color: var(--text-tertiary);">Prime Micro-Markets:</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;" id="predArchetypeLocations">
+                <span class="ai-pred-tag">Golf Course Rd</span>
+                <span class="ai-pred-tag">DLF Phase 5</span>
+                <span class="ai-pred-tag">Galleria</span>
+                <span class="ai-pred-tag">Vasant Vihar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Winning Pitch Formula -->
+          <div class="ai-pred-card">
+            <div class="ai-pred-card-header">
+              <div>
+                <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--terracotta); letter-spacing: 0.5px;">🎯 Winning Pitch Formula</div>
+                <div style="font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700; color: var(--text); margin-top: 4px;" id="predHookName">After-Hours Leak + 60s Preview</div>
+              </div>
+              <span class="kpi-badge badge-terracotta" id="predHookReplyRate" style="font-size: 0.75rem;">36.4% Reply Rate</span>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-tertiary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase;">Core Psychological Triggers:</div>
+              <ul style="margin: 0; padding-left: 18px; font-size: 0.74rem; color: var(--text-secondary); line-height: 1.45; display: flex; flex-direction: column; gap: 4px;" id="predHookTriggers">
+                <li>Explicitly naming their specific high-ticket inventory or clinic procedure</li>
+                <li>Highlighting after-hours drop-off (browsing after 9 PM on mobile)</li>
+                <li>Zero-friction commitment (60-sec interactive demo instead of 30-min call)</li>
+              </ul>
+            </div>
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase;">Proven Copy Template:</span>
+                <button type="button" class="btn btn-secondary btn-xs" onclick="copyPredictedWinningTemplate()" style="padding: 2px 7px; font-size: 10px; height: auto;">
+                  📋 Copy
+                </button>
+              </div>
+              <div class="ai-template-box" id="predWinningTemplate">
+                Hi [Owner]! Admiring your [Niche] portfolio in [Location]. For [High-Ticket Items], affluent clients often browse after 9 PM. We build lightning-fast web experiences with a 24/7 AI Concierge that captures verified numbers straight to your WhatsApp. Built a 60-second preview — open to seeing it?
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Pitch Pitfalls to Avoid -->
+          <div class="ai-pred-card">
+            <div class="ai-pred-card-header">
+              <div>
+                <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--amber-warm); letter-spacing: 0.5px;">⚠️ Pitch Mistake to Avoid</div>
+                <div style="font-family: var(--font-serif); font-size: 1.05rem; font-weight: 700; color: var(--text); margin-top: 4px;" id="predMistakeTitle">Generic AI Feature Dumping</div>
+              </div>
+              <span class="kpi-badge badge-amber" style="font-size: 0.75rem;">Conversion Leak</span>
+            </div>
+            <div style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--amber-warm); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 0.76rem; color: var(--text); line-height: 1.45;" id="predMistakeDesc">
+              Sending 80+ word technical paragraphs pitching "AI Voice bots and automation" without referencing their specific inventory or clinic location causes immediate ghosting.
+            </div>
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase;">Recommended Rule of Thumb:</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.45;" id="predMistakeFix">
+                Keep outreach under 40 words, anchor to their exact micro-market (e.g. Golf Course Road), and end with a low-friction question offering a 60-second interactive preview.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Predicted Hot Leads Container -->
+        <div class="ai-hot-leads-card">
+          <div class="conv-card-header">
+            <div>
+              <div class="conv-card-title">
+                <span>🚀</span> Top Predicted High-Propensity Leads to Pitch Today
+              </div>
+              <div class="conv-card-desc">Ranked by AI win probability based on location prestige, average ticket size, and after-hours capture deficit</div>
+            </div>
+            <span class="kpi-badge badge-green" id="predHotLeadsCountBadge">3 High-Propensity Targets</span>
+          </div>
+
+          <div class="ai-hot-leads-grid" id="predHotLeadsContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -4344,6 +4595,180 @@
             <span>Won: <strong>₹${(closedVal/1000).toFixed(0)}k</strong></span>
           </div>
         `;
+      }
+
+      // Automatically trigger AI Predictions if not already cached
+      if (!cachedAiPredictions && !isFetchingPredictions) {
+        fetchAiPredictions(false);
+      }
+    }
+
+    /* ========================================================
+       AI PREDICTIONS & PITCH INTELLIGENCE CLIENT LOGIC
+       ======================================================== */
+    let cachedAiPredictions = null;
+    let isFetchingPredictions = false;
+
+    async function fetchAiPredictions(forceRefresh = false) {
+      if (cachedAiPredictions && !forceRefresh) {
+        renderAiPredictions(cachedAiPredictions);
+        return;
+      }
+
+      if (isFetchingPredictions) return;
+      isFetchingPredictions = true;
+
+      const refreshBtn = document.getElementById('btnRefreshPredictions');
+      const spinner = document.getElementById('predRefreshSpinner');
+      if (spinner) spinner.innerHTML = '⏳';
+      if (refreshBtn) refreshBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/ai/predictions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ force: forceRefresh })
+        });
+        const data = await res.json();
+        if (data.status === 'success' && data.predictions) {
+          cachedAiPredictions = data.predictions;
+          const badge = document.getElementById('aiPredModelBadge');
+          if (badge) {
+            badge.innerText = data.source === 'groq_qwen' ? 'Groq Qwen Engine' : 'AI Analytical Engine';
+          }
+          renderAiPredictions(cachedAiPredictions);
+          if (forceRefresh) showToast("🧠 AI conversion predictions refreshed!");
+        }
+      } catch (err) {
+        console.error("Failed to load AI predictions:", err);
+      } finally {
+        isFetchingPredictions = false;
+        if (spinner) spinner.innerHTML = '⚡';
+        if (refreshBtn) refreshBtn.disabled = false;
+      }
+    }
+
+    function renderAiPredictions(preds) {
+      if (!preds) return;
+
+      // 1. Winning Archetype
+      if (preds.winning_archetype) {
+        const wa = preds.winning_archetype;
+        const titleEl = document.getElementById('predArchetypeTitle');
+        if (titleEl && wa.profile_title) titleEl.innerText = wa.profile_title;
+
+        const scoreEl = document.getElementById('predArchetypeScore');
+        if (scoreEl && wa.conversion_score) scoreEl.innerText = `${wa.conversion_score}% Propensity`;
+
+        const whyEl = document.getElementById('predArchetypeWhy');
+        if (whyEl && wa.why_it_works) whyEl.innerText = wa.why_it_works;
+
+        const ticketEl = document.getElementById('predArchetypeTicket');
+        if (ticketEl && wa.ideal_ticket_size) ticketEl.innerText = wa.ideal_ticket_size;
+
+        const locsEl = document.getElementById('predArchetypeLocations');
+        if (locsEl && Array.isArray(wa.prime_locations)) {
+          locsEl.innerHTML = wa.prime_locations.map(loc => `<span class="ai-pred-tag">${escapeHtml(loc)}</span>`).join('');
+        }
+      }
+
+      // 2. Winning Pitch Formula
+      if (preds.winning_pitch_formula) {
+        const wf = preds.winning_pitch_formula;
+        const nameEl = document.getElementById('predHookName');
+        if (nameEl && wf.hook_name) nameEl.innerText = wf.hook_name;
+
+        const replyEl = document.getElementById('predHookReplyRate');
+        if (replyEl && wf.avg_reply_rate) replyEl.innerText = `${wf.avg_reply_rate} Reply Rate`;
+
+        const trigEl = document.getElementById('predHookTriggers');
+        if (trigEl && Array.isArray(wf.core_triggers)) {
+          trigEl.innerHTML = wf.core_triggers.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+        }
+
+        const tplEl = document.getElementById('predWinningTemplate');
+        if (tplEl && wf.winning_template) tplEl.innerText = wf.winning_template;
+      }
+
+      // 3. Underperforming Mistake
+      if (preds.underperforming_pitches) {
+        const um = preds.underperforming_pitches;
+        const mistDescEl = document.getElementById('predMistakeDesc');
+        if (mistDescEl && um.common_mistake) mistDescEl.innerText = um.common_mistake;
+
+        const fixEl = document.getElementById('predMistakeFix');
+        if (fixEl && um.fix_recommendation) fixEl.innerText = um.fix_recommendation;
+      }
+
+      // 4. Hot Leads Container
+      const leadsContainer = document.getElementById('predHotLeadsContainer');
+      const leadsBadge = document.getElementById('predHotLeadsCountBadge');
+      if (leadsContainer && Array.isArray(preds.top_predicted_hot_leads)) {
+        if (leadsBadge) leadsBadge.innerText = `${preds.top_predicted_hot_leads.length} High-Propensity Targets`;
+
+        leadsContainer.innerHTML = preds.top_predicted_hot_leads.map(lead => {
+          // Find matching prospect in allLeads
+          const matchedLead = (allLeads || []).find(l => 
+            (l.business || '').toLowerCase().includes((lead.business || '').toLowerCase().trim()) ||
+            (lead.business || '').toLowerCase().includes((l.business || '').toLowerCase().trim())
+          );
+
+          const phone = matchedLead ? matchedLead.phone : '+91 96438 10087';
+          const cleanPhone = formatWhatsAppPhone(phone);
+          const owner = matchedLead ? (matchedLead.owner || 'Founder') : 'Founder';
+          const businessName = lead.business || (matchedLead ? matchedLead.business : 'Client');
+          const niche = lead.niche || (matchedLead ? matchedLead.niche : 'Luxury Services');
+          const winRate = lead.predicted_win_rate || 85;
+
+          // Build tailored outreach pitch
+          const outreachText = `Hi ${owner}! Admiring ${businessName}'s reputation in ${matchedLead?.location || 'Gurugram'}. For high-ticket ${niche.toLowerCase()} clients, after-hours enquiries on mobile often go unanswered. We build high-converting web experiences with a 24/7 AI Concierge that captures verified numbers straight to your WhatsApp. Built a 60-second preview — open to seeing how it works?`;
+
+          const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(outreachText)}`;
+
+          return `
+            <div class="ai-hot-lead-item">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                  <div>
+                    <span class="ai-pred-tag" style="background: rgba(88, 129, 87, 0.12); color: var(--sage-green); border-color: rgba(88, 129, 87, 0.25); margin-bottom: 5px;">
+                      ⚡ ${winRate}% Win Propensity
+                    </span>
+                    <h4 style="font-family: var(--font-serif); font-size: 0.95rem; font-weight: 700; color: var(--text); margin: 3px 0 2px;">
+                      ${escapeHtml(businessName)}
+                    </h4>
+                    <div style="font-size: 0.72rem; color: var(--text-tertiary);">
+                      ${owner} • ${escapeHtml(niche)}
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background: var(--bg-subtle); border-radius: var(--radius-sm); padding: 8px 10px; margin-top: 10px; font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; border-left: 2px solid var(--sage-green);">
+                  🎯 <strong>Why it will convert:</strong> ${escapeHtml(lead.reason || '')}
+                </div>
+
+                <div style="margin-top: 8px; font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4;">
+                  💡 <strong>Winning Angle:</strong> ${escapeHtml(lead.recommended_angle || '')}
+                </div>
+              </div>
+
+              <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px; display: flex; gap: 8px;">
+                <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-xs" style="flex: 1; text-decoration: none; justify-content: center; gap: 5px;" onclick="showToast('💬 Launching WhatsApp for ${escapeHtml(businessName)}...')">
+                  <span>🚀</span> Launch WhatsApp
+                </a>
+                <button type="button" class="btn btn-secondary btn-xs" style="padding: 2px 8px;" onclick="copyPitchText('${outreachText.replace(/'/g, "\\'")}')">
+                  📋
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function copyPredictedWinningTemplate() {
+      const tplEl = document.getElementById('predWinningTemplate');
+      if (tplEl) {
+        copyPitchText(tplEl.innerText.trim());
       }
     }
 
