@@ -80,3 +80,17 @@ npm run dev
 ```
 Open **`http://localhost:3000`** in your browser.
 
+---
+
+## ⚡ Continuous Deployment (Vercel GitHub Action)
+
+This repository includes automated CI/CD for Vercel at [`.github/workflows/vercel.yml`](file:///.github/workflows/vercel.yml).
+
+To enable automated production & preview deployments:
+1. Link your project on Vercel: `vercel link`
+2. Add the following **Repository Secrets** in **GitHub → Settings → Secrets and variables → Actions**:
+   - `VERCEL_TOKEN`: Your Vercel Personal Access Token ([vercel.com/account/tokens](https://vercel.com/account/tokens))
+   - `VERCEL_ORG_ID`: Found in `.vercel/project.json` under `orgId`
+   - `VERCEL_PROJECT_ID`: Found in `.vercel/project.json` under `projectId`
+3. Every `push` to `main` automatically deploys to Production; pull requests automatically generate Preview deployments.
+
