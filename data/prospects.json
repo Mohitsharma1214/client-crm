@@ -264,10 +264,10 @@
     "niche": "Ultra-Luxury Real Estate (\u20b95 Cr - \u20b950 Cr+)",
     "location": "Golf Course Road Corridors, Gurugram",
     "weakness": "High-value property buyers browsing at night get no immediate brochure download or automated tour scheduling",
-    "stage": "PITCH_SENT",
+    "stage": "REPLIED",
     "pitch": "Hi Shobhit! Admiring your ultra-luxury portfolio across Golf Course Road. For \u20b95 Cr - \u20b925 Cr+ inventory, affluent buyers often browse after 9 PM. I build lightning-fast luxury real estate websites equipped with a 24/7 AI Sales Concierge that answers floor-plan and price-range questions, captures verified buyer numbers, and books private walkthroughs to your WhatsApp. Built a 60-second interactive preview \u2014 would you like to see how it works?",
-    "has_replied": false,
-    "reply_notes": "",
+    "has_replied": true,
+    "reply_notes": "Client replied: \"Ok, please share\". Deployed live bespoke demo at /wealthway.",
     "deal_value": 29999,
     "last_contacted": ""
   },

@@ -4007,12 +4007,12 @@
       if (!allLeads || !allLeads.length) return;
 
       const total = allLeads.length;
-      const sent = allLeads.filter(l => ['PITCH_SENT', 'REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON', 'LOST'].includes(l.stage)).length;
-      const replied = allLeads.filter(l => l.has_replied || ['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON'].includes(l.stage)).length;
+      const sent = allLeads.filter(l => ['PITCH_SENT', 'REPLIED', 'INTERESTED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON', 'LOST'].includes(l.stage)).length;
+      const replied = allLeads.filter(l => l.has_replied || ['REPLIED', 'INTERESTED', 'DEMO_SHARED', 'CALL_BOOKED', 'CLOSED_WON'].includes(l.stage)).length;
       const discussion = allLeads.filter(l => ['DEMO_SHARED', 'CALL_BOOKED'].includes(l.stage)).length;
       const won = allLeads.filter(l => l.stage === 'CLOSED_WON').length;
 
-      const awaiting = allLeads.filter(l => l.stage === 'PITCH_SENT' && !l.has_replied).length;
+      const awaiting = allLeads.filter(l => (l.stage === 'PITCH_SENT' || l.stage === 'AWAITING') && !l.has_replied).length;
       const ready = allLeads.filter(l => l.stage === 'PITCH_READY' || l.stage === 'RESEARCHED').length;
 
       const revenue = allLeads
@@ -4020,7 +4020,7 @@
         .reduce((sum, l) => sum + (parseInt(l.deal_value) || 29999), 0);
 
       const pipelineVal = allLeads
-        .filter(l => ['REPLIED', 'DEMO_SHARED', 'CALL_BOOKED'].includes(l.stage))
+        .filter(l => ['REPLIED', 'INTERESTED', 'DEMO_SHARED', 'CALL_BOOKED'].includes(l.stage))
         .reduce((sum, l) => sum + (parseInt(l.deal_value) || 29999), 0);
 
       const replyRate = sent > 0 ? (Math.round((replied / sent) * 1000) / 10) : 0;
@@ -4060,7 +4060,7 @@
       const countAll = document.getElementById('countAll');
       if (countAll) countAll.innerText = total;
       const countReplied = document.getElementById('countReplied');
-      if (countReplied) countReplied.innerText = allLeads.filter(l => l.stage === 'REPLIED').length;
+      if (countReplied) countReplied.innerText = allLeads.filter(l => l.has_replied || ['REPLIED', 'INTERESTED'].includes(l.stage)).length;
       const countAwaiting = document.getElementById('countAwaiting');
       if (countAwaiting) countAwaiting.innerText = awaiting;
       const countReady = document.getElementById('countReady');
@@ -4076,7 +4076,7 @@
       const kbSent = document.getElementById('kbCountSent');
       if (kbSent) kbSent.innerText = awaiting;
       const kbReplied = document.getElementById('kbCountReplied');
-      if (kbReplied) kbReplied.innerText = allLeads.filter(l => l.stage === 'REPLIED' || (l.stage === 'PITCH_SENT' && l.has_replied)).length;
+      if (kbReplied) kbReplied.innerText = allLeads.filter(l => l.has_replied || ['REPLIED', 'INTERESTED'].includes(l.stage)).length;
       const kbDemo = document.getElementById('kbCountDemo');
       if (kbDemo) kbDemo.innerText = discussion;
       const kbWon = document.getElementById('kbCountWon');
@@ -4781,7 +4781,7 @@
       let filtered = allLeads.filter(lead => {
         // Status filter
         if (currentFilter === 'REPLIED') {
-          if (lead.stage !== 'REPLIED') return false;
+          if (!lead.has_replied && !['REPLIED', 'INTERESTED'].includes(lead.stage)) return false;
         } else if (currentFilter === 'AWAITING') {
           if (lead.stage !== 'PITCH_SENT' || lead.has_replied) return false;
         } else if (currentFilter === 'READY') {
@@ -5016,7 +5016,7 @@
           colKey = 'WON';
         } else if (lead.stage === 'DEMO_SHARED' || lead.stage === 'CALL_BOOKED') {
           colKey = 'DEMO';
-        } else if (lead.stage === 'REPLIED') {
+        } else if (lead.stage === 'REPLIED' || lead.stage === 'INTERESTED') {
           colKey = 'REPLIED';
         } else if (lead.stage === 'PITCH_SENT') {
           colKey = lead.has_replied ? 'REPLIED' : 'SENT';
