@@ -783,10 +783,10 @@ async def parse_raw_info(request):
                     if t and not t.lower().startswith("google") and not t.lower().startswith("404"):
                         resolved_info += f"\nPage Title: {t}"
 
-                # D. Look for phone numbers in destination page
-                page_phones = re.findall(r'(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', resp.text)
+                # D. Look for phone numbers in destination page (excluding Google timestamp artifacts)
+                page_phones = re.findall(r'(?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}', resp.text)
                 if page_phones:
-                    valid_phones = [p for p in page_phones if not p.startswith("1794")]
+                    valid_phones = [p for p in page_phones if not p.startswith("1794") and not p.startswith("794") and not p.startswith("8637")]
                     if valid_phones:
                         resolved_info += f"\nDetected Phone: {valid_phones[0]}"
         except Exception as e:
