@@ -777,9 +777,13 @@ async def parse_raw_info(request):
 
     # 2. Try Groq Qwen LLM
     try:
-        prompt = f"""You are a CRM parser assistant. Given the following raw text or Google Maps info, extract client details into pure JSON.
-Ignore any Google Maps domain (google.com, goo.gl) for the website field.
-Output strictly valid JSON with no markdown wrapping, matching this schema:
+        prompt = f"""You are an elite B2B CRM AI extractor and copywriter for luxury clinics and aesthetic businesses in Gurugram/NCR.
+Given the following raw text or Google Maps info:
+1. Extract client business details into clean JSON.
+2. Ignore Google Maps URLs (google.com, goo.gl) for the website field.
+3. Generate a hyper-personalized Initial WhatsApp Pitch AND custom multi-day follow-up messages tailored specifically to this business and founder.
+
+Output strictly valid JSON with no markdown formatting:
 {{
   "business": "Business Name",
   "owner": "Doctor or Founder name or empty",
@@ -788,8 +792,11 @@ Output strictly valid JSON with no markdown wrapping, matching this schema:
   "location": "City or locality (e.g. Gurugram)",
   "niche": "Cosmetic Dentistry & Implants" | "Clinical Dermatology & Aesthetics" | "Luxury Interior Design" | "Luxury Real Estate" | "Luxury Salon & Spa",
   "deal_value": 29999,
-  "weakness": "1-sentence pain point (e.g. missing 24/7 instant appointment booking)",
-  "pitch": "1-sentence custom WhatsApp pitch for the owner"
+  "weakness": "1-sentence specific clinic pain point (e.g. lost patient bookings after 8 PM)",
+  "pitch": "Short conversational cold WhatsApp hook (max 35 words)",
+  "follow_up_day1": "Short polite bump message for Day 1 (max 30 words)",
+  "follow_up_day3": "Value-add follow-up citing a specific clinic scenario/social proof for Day 3 (max 40 words)",
+  "follow_up_day7": "Low-friction final check-in / soft breakup for Day 7 (max 30 words)"
 }}
 
 Raw Input:
@@ -874,9 +881,71 @@ Raw Input:
 
     b_name = extracted["business"] or "your business"
     o_name = extracted["owner"] or "there"
+    n_name = extracted["niche"] or "clinic"
     extracted["pitch"] = f"Hi {o_name}! Admiring your work at {b_name}. Quick question: would you be open to an automated 24/7 AI booking assistant on WhatsApp for your inquiries?"
+    extracted["follow_up_day1"] = f"Hi {o_name}! Just bumping my note regarding 24/7 AI booking for {b_name}. Did you get a chance to review it?"
+    extracted["follow_up_day3"] = f"Hi {o_name}, thought of {b_name} — we just helped a {n_name} in Gurugram capture 35% more after-hours WhatsApp inquiries. Would love to share the 45-sec demo if you're open?"
+    extracted["follow_up_day7"] = f"Hi {o_name}! Don't want to clutter your chat. If automating patient bookings on WhatsApp becomes a priority for {b_name} this quarter, feel free to reach out anytime!"
 
     return JSONResponse({"status": "success", "extracted": extracted, "source": "regex_fallback"})
+
+
+async def generate_follow_up_ai(request):
+    """Generates an everyday custom WhatsApp follow-up message using Groq Qwen with client context."""
+    data = await request.json()
+    business = data.get("business", "").strip() or "your business"
+    owner = data.get("owner", "").strip() or "there"
+    niche = data.get("niche", "").strip() or "Clinic"
+    location = data.get("location", "").strip() or "Gurugram"
+    weakness = data.get("weakness", "").strip() or "missing after-hours WhatsApp booking"
+    stage = data.get("stage", "PITCH_SENT")
+    touchpoint = data.get("touchpoint", "Day 3 (Value & Case Study)")
+    days_since = data.get("days_since")
+    custom_notes = data.get("custom_notes", "").strip()
+
+    days_info = f"It has been {days_since} days since last contact." if days_since is not None else ""
+
+    prompt = f"""You are an elite B2B WhatsApp Copywriter selling 24/7 AI Receptionists & WhatsApp Booking Assistants to clinic founders, aesthetic doctors, and luxury design firms in Gurugram/Delhi NCR.
+
+Client Context:
+- Business: {business}
+- Owner / Key Contact: {owner}
+- Industry Niche: {niche}
+- City: {location}
+- Main Pain Point: {weakness}
+- Current Stage: {stage}
+- Follow-Up Touchpoint: {touchpoint}
+- Timing: {days_info}
+{f'- Extra Focus / Note: {custom_notes}' if custom_notes else ''}
+
+Instructions:
+1. Write a short, highly converting, conversational WhatsApp message (30 to 45 words maximum).
+2. It MUST sound like a direct, respectful, 1-on-1 human note on WhatsApp (not a cold email).
+3. Do NOT start with 'Hope this email finds you well' or 'Just checking in'.
+4. Reference their business ({business}) and a realistic high-value scenario (e.g. capturing patient appointments after 8 PM, instant quotes, automated calendar sync).
+5. End with a light, low-friction question (e.g. 'Would you be open to a 30-sec video demo?' or 'Mind if I share a quick screenshot?').
+6. Output ONLY the message text. No quotes, no markdown bolding around the entire message, no preambles."""
+
+    try:
+        async with httpx.AsyncClient(timeout=12.0) as client:
+            res = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+                json={
+                    "model": "qwen/qwen3.8-27b",
+                    "messages": [
+                        {"role": "system", "content": "You are a master WhatsApp sales copywriter. You write brief, high-converting, personalized WhatsApp messages."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": 0.7,
+                    "max_tokens": 150
+                }
+            )
+            msg = res.json()["choices"][0]["message"]["content"].strip().strip('"')
+            return JSONResponse({"status": "success", "message": msg, "touchpoint": touchpoint, "model": "qwen/qwen3.8-27b"})
+    except Exception as e:
+        fallback = f"Hi {owner}! Following up on my note regarding 24/7 AI booking for {business}. We just helped another {niche} in {location} capture 35% more off-hours leads. Would you be open to a quick 45-sec demo?"
+        return JSONResponse({"status": "fallback", "message": fallback, "touchpoint": touchpoint, "error": str(e)})
 
 
 async def download_react_zip(request):
@@ -917,6 +986,7 @@ routes = [
     Route("/api/prospects/analytics", get_analytics, methods=["GET"]),
     Route("/api/prospects/parse-info", parse_raw_info, methods=["POST"]),
     Route("/api/ai/copilot", copilot_chat, methods=["POST"]),
+    Route("/api/ai/follow-up", generate_follow_up_ai, methods=["POST"]),
     Mount("/static", app=StaticFiles(directory=static_dir), name="static")
 ]
 

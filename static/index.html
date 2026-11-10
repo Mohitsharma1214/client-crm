@@ -2447,6 +2447,68 @@
       border-color: rgba(217, 119, 87, 0.55);
     }
 
+    /* AI Follow-Up Generator & Sequence Selector Styles */
+    .btn-touch-tab {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-touch-tab:hover {
+      border-color: var(--terracotta);
+      color: var(--text);
+    }
+    .btn-touch-tab.active {
+      background: var(--terracotta);
+      color: #fff;
+      border-color: var(--terracotta);
+      font-weight: 600;
+    }
+    .fu-chip {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .fu-chip:hover {
+      border-color: var(--terracotta);
+      color: var(--text);
+    }
+    .fu-chip.active {
+      background: var(--terracotta-soft);
+      border-color: var(--terracotta);
+      color: var(--terracotta);
+      font-weight: 700;
+    }
+    .btn-ai-fu {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: linear-gradient(135deg, rgba(217, 119, 87, 0.12), rgba(217, 119, 87, 0.22));
+      border: 1px solid rgba(217, 119, 87, 0.4);
+      color: var(--terracotta);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .btn-ai-fu:hover {
+      background: var(--terracotta);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
     .ai-copilot-drawer {
       position: fixed;
       top: 0;
@@ -2963,9 +3025,30 @@
           <textarea id="newLeadWeakness" class="form-input" rows="2" placeholder="e.g. Missing after-hours inquiry capture on mobile website."></textarea>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Custom WhatsApp Outreach Message (Optional)</label>
-          <textarea id="newLeadPitch" class="form-input" rows="3" placeholder="Leave empty to auto-generate personalized message..."></textarea>
+        <!-- AI WhatsApp Sequence & Everyday Follow-up Strategy -->
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 6px;">
+              <span>✨</span> AI WhatsApp Outreach & Everyday Follow-Up Strategy
+            </div>
+            <button type="button" class="btn btn-secondary btn-xs" onclick="generateNewClientFollowUpSequence()" id="btnRegenSequence" style="font-size: 0.7rem; padding: 2px 8px;">
+              ⚡ AI Regenerate
+            </button>
+          </div>
+          
+          <!-- Touch Selector Pills -->
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+            <button type="button" class="btn-touch-tab active" id="tabTouch0" onclick="selectNewLeadTouch(0)">Day 0: Cold Hook</button>
+            <button type="button" class="btn-touch-tab" id="tabTouch1" onclick="selectNewLeadTouch(1)">Day 1: Quick Bump</button>
+            <button type="button" class="btn-touch-tab" id="tabTouch3" onclick="selectNewLeadTouch(3)">Day 3: Value Case</button>
+            <button type="button" class="btn-touch-tab" id="tabTouch7" onclick="selectNewLeadTouch(7)">Day 7: Soft Touch</button>
+          </div>
+
+          <textarea id="newLeadPitch" class="form-input" rows="3" placeholder="Leave empty or click Auto-Fill to have Groq Qwen craft a tailored pitch..." oninput="updateActiveTouchText(this.value)"></textarea>
+          <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-tertiary); margin-top: 4px;">
+            <span id="touchTabCaption">Day 0: Initial personalized cold outreach hook on WhatsApp.</span>
+            <span id="touchModelBadge" style="font-family: var(--font-mono); color: var(--terracotta);">🤖 Groq Qwen Active</span>
+          </div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
@@ -3119,6 +3202,86 @@
       <!-- Active Client Card Container (Dynamic) -->
       <div id="wizardActiveCardContainer">
         <!-- Rendered by renderWizardStep() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODAL 5: DEDICATED AI EVERYDAY FOLLOW-UP GENERATOR
+       ======================================================== -->
+  <div class="modal-backdrop" id="aiFollowUpModal" onclick="handleBackdropClick(event, 'aiFollowUpModal')">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 6px;">
+            <span>✨</span> AI Everyday WhatsApp Follow-Up
+          </h3>
+          <div class="modal-subtitle">AI-crafted high-converting follow-up message tailored to this client's niche and status.</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('aiFollowUpModal')">&times;</button>
+      </div>
+
+      <!-- Target Prospect Context Banner -->
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+          <div>
+            <h4 id="fuModalBizName" style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text);">Client Business</h4>
+            <div id="fuModalMeta" style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+              👤 Dr. Name • 📍 Location • 🏷️ Niche
+            </div>
+          </div>
+          <span id="fuModalStageBadge" class="kpi-badge">PITCH_SENT</span>
+        </div>
+      </div>
+
+      <!-- Day / Touchpoint Selector Chips -->
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">
+          Select Follow-Up Timing & Angle:
+        </label>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="fuTouchpointChips">
+          <button type="button" class="fu-chip active" onclick="setFuTouchpoint('Day 1 (Quick Bump)', this)">⚡ Day 1: Quick Bump</button>
+          <button type="button" class="fu-chip" onclick="setFuTouchpoint('Day 3 (Value & Scenario)', this)">🎯 Day 3: Value & Bottleneck</button>
+          <button type="button" class="fu-chip" onclick="setFuTouchpoint('Day 5 (60s Demo Video)', this)">🎥 Day 5: Demo Video Hook</button>
+          <button type="button" class="fu-chip" onclick="setFuTouchpoint('Day 7 (Soft Breakup)', this)">☕ Day 7: Soft Touch</button>
+          <button type="button" class="fu-chip" onclick="setFuTouchpoint('Overdue Re-activation', this)">🔥 Overdue Re-activation</button>
+        </div>
+      </div>
+
+      <!-- Optional Custom Focus / Note -->
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <label style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary);">Custom Angle / Focus (Optional):</label>
+          <button type="button" class="btn btn-secondary btn-xs" id="btnFuRegenerate" onclick="triggerAiFollowUpGeneration()" style="font-size: 0.7rem; padding: 2px 8px;">
+            ⚡ Regenerate with Groq Qwen
+          </button>
+        </div>
+        <input type="text" id="fuCustomNoteInput" class="form-input" style="font-size: 0.78rem;" placeholder="e.g. Focus on lost emergency appointments after 8 PM, or mention 35% revenue boost..." onkeydown="if(event.key==='Enter') triggerAiFollowUpGeneration()">
+      </div>
+
+      <!-- Generated Message Textarea (Editable) -->
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 0.74rem; font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <span>Personalized WhatsApp Message (Editable):</span>
+          <span id="fuModelBadge" style="font-size: 0.68rem; font-family: var(--font-mono); color: var(--terracotta);">🤖 Groq Qwen 27B</span>
+        </label>
+        <textarea id="fuGeneratedMessage" rows="4" style="width: 100%; box-sizing: border-box; font-size: 0.84rem; line-height: 1.45; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); resize: vertical;"></textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button type="button" class="btn btn-wa-blast" id="btnFuOpenWhatsApp" onclick="openFollowUpWhatsApp()" style="width: 100%; justify-content: center; font-size: 0.88rem; padding: 11px;">
+          <span>💬</span> 1-Click: Open in WhatsApp & Mark Followed Up ↗
+        </button>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" class="btn btn-secondary" onclick="copyFollowUpMessage()" style="justify-content: center; font-size: 0.8rem; padding: 9px;">
+            📋 Copy Message
+          </button>
+          <button type="button" class="btn btn-terracotta" onclick="saveFollowUpToLead()" style="justify-content: center; font-size: 0.8rem; padding: 9px;">
+            💾 Save to Client Record
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3687,6 +3850,9 @@
             </td>
 
             <td style="text-align: right; white-space: nowrap;">
+              <button class="btn-ai-fu" onclick="openAiFollowUpModal('${lead.id}')" title="AI Generate Everyday Follow-up with Groq Qwen">
+                ✨ Follow-Up
+              </button>
               ${!isReplied ? `
                 <button class="btn-quick-reply" onclick="quickLogReply('${lead.id}', event)" title="1-Tap: Mark client as Replied!">
                   💬 Got Reply
@@ -3777,8 +3943,11 @@
                 ${lead.last_contacted ? `🕒 Sent: ${lead.last_contacted}` : `Added: ${lead.date_added || 'Recently'}`}
               </div>
               <div class="cmc-actions">
+                <button class="btn-ai-fu" onclick="openAiFollowUpModal('${lead.id}')" title="AI Generate Everyday Follow-up with Groq Qwen">
+                  ✨ AI Follow-Up
+                </button>
                 <button class="btn btn-secondary btn-sm" onclick='copyPitchText(${JSON.stringify(lead.pitch)})' title="Copy customized outreach pitch">
-                  📋 Copy Pitch
+                  📋 Pitch
                 </button>
                 <button class="btn btn-secondary btn-sm" onclick="openEditLeadModal('${lead.id}')" title="Edit client details">
                   ✏️ Edit
@@ -3869,6 +4038,9 @@
                 <option value="DEMO_SHARED" ${['DEMO_SHARED', 'CALL_BOOKED'].includes(lead.stage) ? 'selected' : ''}>🎬 Discuss</option>
                 <option value="CLOSED_WON" ${lead.stage === 'CLOSED_WON' ? 'selected' : ''}>🏆 Won</option>
               </select>
+              <button class="btn-ai-fu" style="padding: 2px 6px; font-size: 0.68rem;" onclick="openAiFollowUpModal('${lead.id}')" title="AI Everyday Follow-Up">
+                ✨ Follow-Up
+              </button>
               <button class="btn btn-secondary btn-sm kb-btn-icon" onclick='copyPitchText(${JSON.stringify(lead.pitch)})' title="Copy outreach pitch">
                 📋
               </button>
@@ -4216,12 +4388,17 @@
         pitch = `Hi ${owner}! Really admire your work at ${business}. Quick observation: when potential clients visit your website on mobile after hours, they have no instant way to check pricing or book appointments on WhatsApp. I build modern high-speed websites with an embedded 24/7 AI Concierge that captures qualified leads right to your phone. I created a 60-second interactive preview for ${business}. Mind if I send the link?`;
       }
 
+      let notes = '';
+      if (currentExtractedTouches[1] || currentExtractedTouches[3]) {
+        notes = `AI Follow-Up Sequence:\n• Day 1: ${currentExtractedTouches[1] || ''}\n• Day 3: ${currentExtractedTouches[3] || ''}\n• Day 7: ${currentExtractedTouches[7] || ''}`;
+      }
+
       try {
         await fetch('/api/prospects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            business, owner, phone, website, niche, location, weakness, pitch,
+            business, owner, phone, website, niche, location, weakness, pitch, notes,
             stage: 'PITCH_READY', has_replied: false, deal_value: 29999
           })
         });
@@ -4416,7 +4593,10 @@
                 💬 <em>"${escapeHtml(msg)}"</em>
               </div>
             </div>
-            <div class="followup-actions">
+            <div class="followup-actions" style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <button class="btn-ai-fu" onclick="openAiFollowUpModal('${lead.id}')" title="AI Generate Custom Everyday WhatsApp Follow-up">
+                ✨ AI Follow-Up
+              </button>
               <button class="btn-quick-reply" onclick="quickLogReply('${lead.id}', event)" title="1-Tap: Mark as Replied!">
                 💬 Got Reply
               </button>
@@ -4612,6 +4792,84 @@
     /* ========================================================
        FEATURE 4: GOOGLE MAPS & RAW INFO QUICK-PARSER
        ======================================================== */
+    /* ========================================================
+       FEATURE 4: GOOGLE MAPS & RAW INFO QUICK-PARSER
+       ======================================================== */
+    let currentExtractedTouches = { 0: '', 1: '', 3: '', 7: '' };
+    let activeNewLeadTouch = 0;
+
+    function selectNewLeadTouch(touchNum) {
+      activeNewLeadTouch = touchNum;
+      document.querySelectorAll('.btn-touch-tab').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`tabTouch${touchNum}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const pitchArea = document.getElementById('newLeadPitch');
+      const caption = document.getElementById('touchTabCaption');
+      if (pitchArea && currentExtractedTouches[touchNum] !== undefined) {
+        pitchArea.value = currentExtractedTouches[touchNum];
+      }
+
+      if (caption) {
+        if (touchNum === 0) caption.innerText = "Day 0: Initial personalized cold outreach hook on WhatsApp.";
+        else if (touchNum === 1) caption.innerText = "Day 1: Short polite bump message for unread initial outreach.";
+        else if (touchNum === 3) caption.innerText = "Day 3: Value-add follow-up citing a relevant scenario / social proof.";
+        else if (touchNum === 7) caption.innerText = "Day 7: Low-friction soft touch / final check-in.";
+      }
+    }
+
+    function updateActiveTouchText(val) {
+      currentExtractedTouches[activeNewLeadTouch] = val;
+    }
+
+    async function generateNewClientFollowUpSequence() {
+      const biz = document.getElementById('newLeadBusiness').value.trim();
+      const owner = document.getElementById('newLeadOwner').value.trim();
+      const niche = document.getElementById('newLeadNiche').value.trim();
+      const loc = document.getElementById('newLeadLocation').value.trim();
+      const weakness = document.getElementById('newLeadWeakness').value.trim();
+      const btn = document.getElementById('btnRegenSequence');
+
+      if (!biz) {
+        showToast("⚠️ Enter or auto-fill a Business Name first");
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.innerText = "⏳ Generating..."; }
+
+      const touchLabels = {
+        0: 'Cold Outreach Hook',
+        1: 'Day 1 (Quick Bump)',
+        3: 'Day 3 (Value & Scenario)',
+        7: 'Day 7 (Soft Breakup)'
+      };
+
+      try {
+        const res = await fetch('/api/ai/follow-up', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            business: biz,
+            owner: owner || 'Founder',
+            niche: niche || 'Clinic',
+            location: loc || 'Gurugram',
+            weakness: weakness || 'Missing after-hours WhatsApp lead capture',
+            touchpoint: touchLabels[activeNewLeadTouch] || 'Everyday Follow-up'
+          })
+        });
+        const data = await res.json();
+        if (data.message) {
+          currentExtractedTouches[activeNewLeadTouch] = data.message;
+          const pitchArea = document.getElementById('newLeadPitch');
+          if (pitchArea) pitchArea.value = data.message;
+          showToast(`✨ Generated ${touchLabels[activeNewLeadTouch]} via Groq Qwen!`);
+        }
+      } catch (e) {
+        showToast("⚠️ Could not generate follow-up message");
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerText = "⚡ AI Regenerate"; }
+      }
+    }
+
     async function parseAndAutoFillLead() {
       const input = document.getElementById('gmapsRawInput');
       const btn = document.getElementById('btnAutoFill');
@@ -4638,10 +4896,16 @@
           if (ex.niche) document.getElementById('newLeadNiche').value = ex.niche;
           if (ex.location) document.getElementById('newLeadLocation').value = ex.location;
           if (ex.weakness) document.getElementById('newLeadWeakness').value = ex.weakness;
-          if (ex.pitch) document.getElementById('newLeadPitch').value = ex.pitch;
+
+          // Populate complete follow-up sequence
+          currentExtractedTouches[0] = ex.pitch || '';
+          currentExtractedTouches[1] = ex.follow_up_day1 || '';
+          currentExtractedTouches[3] = ex.follow_up_day3 || '';
+          currentExtractedTouches[7] = ex.follow_up_day7 || '';
+          selectNewLeadTouch(0);
 
           const sourceTag = data.source === 'groq_qwen' ? '🤖 AI Groq Qwen' : '⚡ Smart Pattern';
-          showToast(`✨ Extracted via ${sourceTag}! Review and click Save.`);
+          showToast(`✨ Extracted & generated follow-up sequence via ${sourceTag}!`);
         } else {
           showToast("⚠️ Couldn't auto-parse text. Please fill details manually.");
         }
@@ -4651,6 +4915,158 @@
       } finally {
         if (btn) { btn.disabled = false; btn.innerText = "⚡ Auto-Fill"; }
       }
+    }
+
+    /* ========================================================
+       FEATURE 5: AI EVERYDAY WHATSAPP FOLLOW-UP ENGINE
+       ======================================================== */
+    let activeFuLead = null;
+    let activeFuTouchpoint = 'Day 3 (Value & Scenario)';
+
+    function openAiFollowUpModal(leadId) {
+      const lead = allLeads.find(l => l.id === leadId);
+      if (!lead) return;
+      activeFuLead = lead;
+
+      const bizEl = document.getElementById('fuModalBizName');
+      const metaEl = document.getElementById('fuModalMeta');
+      const stageEl = document.getElementById('fuModalStageBadge');
+      const noteInput = document.getElementById('fuCustomNoteInput');
+
+      if (bizEl) bizEl.innerText = lead.business || 'Unnamed Client';
+      if (metaEl) metaEl.innerText = `👤 ${lead.owner || 'Contact Person'} • 📍 ${lead.location || 'Gurugram'} • 🏷️ ${lead.niche || 'Clinic'}`;
+      if (stageEl) {
+        stageEl.innerText = lead.stage || 'PITCH_SENT';
+        stageEl.className = 'kpi-badge';
+      }
+      if (noteInput) noteInput.value = '';
+
+      activeFuTouchpoint = 'Day 3 (Value & Scenario)';
+      document.querySelectorAll('#fuTouchpointChips .fu-chip').forEach(c => {
+        if (c.innerText.includes('Day 3')) c.classList.add('active');
+        else c.classList.remove('active');
+      });
+
+      openModal('aiFollowUpModal');
+      triggerAiFollowUpGeneration();
+    }
+
+    function setFuTouchpoint(tp, btn) {
+      activeFuTouchpoint = tp;
+      document.querySelectorAll('#fuTouchpointChips .fu-chip').forEach(c => c.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      triggerAiFollowUpGeneration();
+    }
+
+    async function triggerAiFollowUpGeneration() {
+      if (!activeFuLead) return;
+      const msgArea = document.getElementById('fuGeneratedMessage');
+      const noteInput = document.getElementById('fuCustomNoteInput');
+      const btnGen = document.getElementById('btnFuRegenerate');
+      const badge = document.getElementById('fuModelBadge');
+
+      if (msgArea) {
+        msgArea.disabled = true;
+        msgArea.value = '⏳ Groq Qwen is crafting your custom follow-up message...';
+      }
+      if (btnGen) { btnGen.disabled = true; btnGen.innerText = '⏳ Generating...'; }
+
+      try {
+        const res = await fetch('/api/ai/follow-up', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: activeFuLead.id,
+            business: activeFuLead.business,
+            owner: activeFuLead.owner,
+            niche: activeFuLead.niche,
+            location: activeFuLead.location,
+            weakness: activeFuLead.weakness,
+            stage: activeFuLead.stage,
+            touchpoint: activeFuTouchpoint,
+            custom_notes: noteInput ? noteInput.value.trim() : ''
+          })
+        });
+        const data = await res.json();
+        if (msgArea) {
+          msgArea.disabled = false;
+          msgArea.value = data.message || '';
+          msgArea.focus();
+        }
+        if (badge) {
+          badge.innerText = (data.status === 'success') ? '🤖 Groq Qwen 27B Active' : '⚡ Smart Template';
+        }
+      } catch (err) {
+        if (msgArea) {
+          msgArea.disabled = false;
+          msgArea.value = `Hi ${activeFuLead.owner || 'there'}! Following up on my note regarding 24/7 AI booking for ${activeFuLead.business}. Would love to share a quick 45-second demo if you're open?`;
+        }
+      } finally {
+        if (btnGen) { btnGen.disabled = false; btnGen.innerText = '⚡ Regenerate with Groq Qwen'; }
+      }
+    }
+
+    function openFollowUpWhatsApp() {
+      if (!activeFuLead) return;
+      const msgArea = document.getElementById('fuGeneratedMessage');
+      const text = msgArea ? msgArea.value.trim() : '';
+      const cleanPhone = formatWhatsAppPhone(activeFuLead.phone);
+      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+
+      const now = new Date();
+      const nowStr = now.toLocaleDateString('en-IN', {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      activeFuLead.last_contacted = nowStr;
+      activeFuLead.pitch = text;
+      updateDashboardMetrics();
+      applyFilters();
+
+      showToast(`💬 Opened WhatsApp follow-up for ${activeFuLead.business}!`);
+      closeModal('aiFollowUpModal');
+
+      try {
+        fetch('/api/prospects/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: activeFuLead.id,
+            last_contacted: nowStr,
+            pitch: text
+          })
+        });
+      } catch (e) {}
+    }
+
+    function copyFollowUpMessage() {
+      const msgArea = document.getElementById('fuGeneratedMessage');
+      if (!msgArea || !msgArea.value.trim()) return;
+      navigator.clipboard.writeText(msgArea.value.trim()).then(() => {
+        showToast('📋 Follow-up message copied to clipboard!');
+      });
+    }
+
+    async function saveFollowUpToLead() {
+      if (!activeFuLead) return;
+      const msgArea = document.getElementById('fuGeneratedMessage');
+      const text = msgArea ? msgArea.value.trim() : '';
+      activeFuLead.pitch = text;
+      applyFilters();
+      closeModal('aiFollowUpModal');
+      showToast(`💾 Saved custom follow-up message for ${activeFuLead.business}`);
+
+      try {
+        fetch('/api/prospects/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: activeFuLead.id,
+            pitch: text
+          })
+        });
+      } catch (e) {}
     }
 
     /* ========================================================
