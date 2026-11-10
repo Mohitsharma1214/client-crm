@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wealthway Luxury Realty • Private Portfolio & 24/7 AI Concierge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-dark: #0a0b0d;
+      --bg-card: #121418;
+      --bg-card-hover: #181b22;
+      --gold: #d4af37;
+      --gold-light: #f3e5ab;
+      --gold-gradient: linear-gradient(135deg, #d4af37 0%, #aa7c11 100%);
+      --text-main: #f9f9fa;
+      --text-muted: #9aa0a6;
+      --border-subtle: rgba(212, 175, 55, 0.2);
+      --border-focus: rgba(212, 175, 55, 0.6);
+      --font-serif: 'Cinzel', serif;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* VIP Top Showcase Banner */
+    .vip-banner {
+      background: linear-gradient(90deg, #181711, #242010, #181711);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 20px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .vip-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--gold);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .vip-tag span.badge {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--gold);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 48px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(10, 11, 13, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .brand-logo {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      letter-spacing: 2px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand-logo span.sub {
+      font-family: var(--font-sans);
+      font-size: 10px;
+      color: var(--gold);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .nav-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 10px 22px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-gold {
+      background: var(--gold-gradient);
+      color: #000;
+      border: none;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.25);
+    }
+    .btn-gold:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid var(--border-subtle);
+    }
+    .btn-outline:hover {
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.08);
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      padding: 90px 48px 70px;
+      text-align: center;
+      max-width: 1050px;
+      margin: 0 auto;
+    }
+    .hero-eyebrow {
+      color: var(--gold);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    .hero h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+    .hero h1 span.gold {
+      background: var(--gold-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0 auto 36px;
+      font-weight: 300;
+    }
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 40px;
+      padding-top: 30px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .stat-item h4 {
+      font-family: var(--font-serif);
+      font-size: 26px;
+      color: var(--gold);
+    }
+    .stat-item p {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0;
+    }
+
+    /* Section Styling */
+    .section {
+      padding: 70px 48px;
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+    .section-header {
+      margin-bottom: 40px;
+      text-align: left;
+    }
+    .section-header h2 {
+      font-family: var(--font-serif);
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    /* Property Cards Grid */
+    .listing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 28px;
+    }
+    .prop-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    .prop-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--border-subtle);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    }
+    .prop-image {
+      height: 240px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+    .prop-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+    }
+    .prop-price {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      background: var(--gold-gradient);
+      color: #000;
+      font-weight: 800;
+      font-size: 16px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-family: var(--font-sans);
+    }
+    .prop-body {
+      padding: 24px;
+    }
+    .prop-title {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .prop-location {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .prop-features {
+      display: flex;
+      gap: 16px;
+      padding: 12px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: #d1d5db;
+    }
+    .prop-features span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .prop-features i { color: var(--gold); }
+    .prop-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ROI / AI Comparison Box */
+    .roi-box {
+      background: linear-gradient(145deg, #14171d, #0f1013);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 40px;
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+      align-items: center;
+    }
+    .roi-box h3 {
+      font-family: var(--font-serif);
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+    .roi-list {
+      list-style: none;
+    }
+    .roi-list li {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: #d1d5db;
+    }
+    .roi-list i {
+      color: var(--gold);
+      margin-top: 4px;
+    }
+
+    /* Floating AI Concierge Widget */
+    .ai-bubble-btn {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--gold-gradient);
+      color: #000;
+      padding: 14px 22px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+      z-index: 1000;
+      border: 2px solid rgba(255,255,255,0.4);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .ai-bubble-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 14px 35px rgba(212, 175, 55, 0.6);
+    }
+    .ai-bubble-btn .pulse-dot {
+      width: 10px;
+      height: 10px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    /* Chat Drawer Modal */
+    .chat-drawer {
+      position: fixed;
+      bottom: 90px;
+      right: 28px;
+      width: 380px;
+      max-width: calc(100vw - 36px);
+      height: 540px;
+      max-height: calc(100vh - 120px);
+      background: #101216;
+      border: 1px solid var(--border-focus);
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1001;
+    }
+    .chat-drawer.open {
+      display: flex;
+      animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .chat-header {
+      background: linear-gradient(90deg, #1a1c22, #15171d);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-header-title {
+      font-family: var(--font-serif);
+      font-size: 15px;
+      color: #fff;
+    }
+    .chat-header-sub {
+      font-size: 11px;
+      color: var(--gold);
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #0d0e12;
+    }
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .msg-bot {
+      background: #1b1e26;
+      color: #f1f2f5;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .msg-user {
+      background: var(--gold-gradient);
+      color: #000;
+      font-weight: 500;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+    .quick-chips {
+      padding: 8px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: #101216;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .chip {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      color: #e5e7eb;
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip:hover {
+      background: rgba(212, 175, 55, 0.15);
+      color: var(--gold);
+      border-color: var(--gold);
+    }
+    .chat-input-row {
+      padding: 12px 16px;
+      background: #14171d;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input {
+      flex: 1;
+      background: #0d0e12;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    .chat-input:focus { border-color: var(--gold); }
+    .chat-send-btn {
+      background: var(--gold-gradient);
+      border: none;
+      color: #000;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    /* Walkthrough Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: #14161c;
+      border: 1px solid var(--border-focus);
+      width: 480px;
+      max-width: 90vw;
+      border-radius: 14px;
+      padding: 30px;
+      position: relative;
+    }
+    .modal-title {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+    .modal-sub {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--gold);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-input {
+      width: 100%;
+      background: #0c0e12;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .form-input:focus { border-color: var(--gold); }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 40px 48px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      background: #08090b;
+    }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 16px 20px; }
+      .hero { padding: 50px 20px 40px; }
+      .section { padding: 40px 20px; }
+      .hero-stats { flex-direction: column; gap: 20px; }
+      .roi-box { grid-template-columns: 1fr; padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- VIP Header Bar -->
+  <div class="vip-banner">
+    <div class="vip-tag">
+      <span class="badge">Live Prototype</span>
+      <span>Prepared for <strong>Shobhit Sharma</strong> • Wealthway Luxury Realty</span>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <a href="https://wa.me/919643810087?text=Hi%20Shobhit,%20I%20am%20exploring%20The%20Camellias%20via%20Wealthway%20AI%20Concierge." target="_blank" style="color: var(--gold); text-decoration: none; font-size: 12px; font-weight: 600;">
+        <i class="fab fa-whatsapp"></i> Test WhatsApp Hook
+      </a>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="brand-logo">
+      WEALTHWAY
+      <span class="sub">Luxury Realty • Gurugram</span>
+    </div>
+    <div class="nav-actions">
+      <a href="tel:+919643810087" class="btn btn-outline" style="padding: 8px 16px;">
+        <i class="fas fa-phone-alt"></i> +91 96438 10087
+      </a>
+      <button class="btn btn-gold" onclick="openWalkthroughModal('General Inquiry')">
+        <i class="fas fa-calendar-check"></i> Book Private Tour
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <span class="hero-eyebrow">Golf Course Road • DLF Phase 5 • Central Park Corridors</span>
+    <h1>Curated Ultra-Luxury Residences & <span class="gold">Sky Villas</span></h1>
+    <p>Discover private residences from ₹15 Cr to ₹45 Cr+ with 24/7 AI-assisted floor-plan inquiries, verified buyer qualification, and instant WhatsApp concierge service.</p>
+    
+    <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+      <a href="#listings" class="btn btn-gold" style="padding: 14px 32px; font-size: 15px;">
+        <i class="fas fa-compass"></i> View Exclusive Inventory
+      </a>
+      <button class="btn btn-outline" style="padding: 14px 32px; font-size: 15px;" onclick="toggleChat()">
+        <i class="fas fa-robot"></i> Test 24/7 AI Sales Concierge
+      </button>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <h4>₹120 Cr+</h4>
+        <p>Curated Active Pipeline</p>
+      </div>
+      <div class="stat-item">
+        <h4>100%</h4>
+        <p>Discreet Confidentiality</p>
+      </div>
+      <div class="stat-item">
+        <h4>&lt; 60 Sec</h4>
+        <p>AI Concierge Response Time</p>
+      </div>
+      <div class="stat-item">
+        <h4>Golf Course Rd</h4>
+        <p>Exclusive Focus</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Curated Listings -->
+  <section class="section" id="listings">
+    <div class="section-header">
+      <h2>Signature Flagship Residences</h2>
+      <p>Hand-selected penthouses and golf-facing estates currently available for confidential viewing.</p>
+    </div>
+
+    <div class="listing-grid">
+      
+      <!-- Card 1 -->
+      <div class="prop-card">
+        <div class="prop-image" style="background-image: url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80');">
+          <span class="prop-badge">DLF Phase 5</span>
+          <span class="prop-price">₹28.50 Cr</span>
+        </div>
+        <div class="prop-body">
+          <h3 class="prop-title">The Camellias Reserve Residence</h3>
+          <div class="prop-location"><i class="fas fa-map-marker-alt" style="color: var(--gold);"></i> Golf Course Road, DLF Phase 5</div>
+          <div class="prop-features">
+            <span><i class="fas fa-bed"></i> 5 BHK</span>
+            <span><i class="fas fa-bath"></i> 6 Baths</span>
+            <span><i class="fas fa-vector-square"></i> 7,400 Sq.Ft</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+            Signature residence offering panoramic golf vistas, private elevator lobby, and full access to the ultra-exclusive Camellias clubhouse and spa.
+          </p>
+          <div class="prop-actions">
+            <button class="btn btn-outline" onclick="askAiAboutProperty('The Camellias')">
+              <i class="fas fa-comment-dots"></i> Ask AI Specs
+            </button>
+            <button class="btn btn-gold" onclick="openWalkthroughModal('The Camellias (₹28.5 Cr)')">
+              <i class="fab fa-whatsapp"></i> Book Tour
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="prop-card">
+        <div class="prop-image" style="background-image: url('https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80');">
+          <span class="prop-badge">Duplex Penthouse</span>
+          <span class="prop-price">₹36.00 Cr</span>
+        </div>
+        <div class="prop-body">
+          <h3 class="prop-title">The Magnolias Signature Sky Villa</h3>
+          <div class="prop-location"><i class="fas fa-map-marker-alt" style="color: var(--gold);"></i> Sector 42, Golf Course Road</div>
+          <div class="prop-features">
+            <span><i class="fas fa-bed"></i> 5 Bed + Lounge</span>
+            <span><i class="fas fa-water"></i> Private Plunge Pool</span>
+            <span><i class="fas fa-vector-square"></i> 9,800 Sq.Ft</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+            Rare sky villa with 360° Aravalli skyline, double-height grand living area, and private temperature-controlled rooftop pool.
+          </p>
+          <div class="prop-actions">
+            <button class="btn btn-outline" onclick="askAiAboutProperty('The Magnolias Sky Villa')">
+              <i class="fas fa-comment-dots"></i> Ask AI Specs
+            </button>
+            <button class="btn btn-gold" onclick="openWalkthroughModal('The Magnolias Sky Villa (₹36.0 Cr)')">
+              <i class="fab fa-whatsapp"></i> Book Tour
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="prop-card">
+        <div class="prop-image" style="background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80');">
+          <span class="prop-badge">Designer Furnished</span>
+          <span class="prop-price">₹19.75 Cr</span>
+        </div>
+        <div class="prop-body">
+          <h3 class="prop-title">DLF The Aralias Sunset Suite</h3>
+          <div class="prop-location"><i class="fas fa-map-marker-alt" style="color: var(--gold);"></i> DLF Phase 5, Gurugram</div>
+          <div class="prop-features">
+            <span><i class="fas fa-bed"></i> 4 BHK</span>
+            <span><i class="fas fa-parking"></i> 4 Private Bays</span>
+            <span><i class="fas fa-vector-square"></i> 5,850 Sq.Ft</span>
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+            Fully custom-designed luxury interior with Italian marble, acoustic double glazing, and front-row sunrise views over the golf greens.
+          </p>
+          <div class="prop-actions">
+            <button class="btn btn-outline" onclick="askAiAboutProperty('DLF The Aralias')">
+              <i class="fas fa-comment-dots"></i> Ask AI Specs
+            </button>
+            <button class="btn btn-gold" onclick="openWalkthroughModal('DLF The Aralias (₹19.75 Cr)')">
+              <i class="fab fa-whatsapp"></i> Book Tour
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROI Proposition for Shobhit -->
+    <div class="roi-box">
+      <div>
+        <span style="color: var(--gold); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">Why Wealthway Needs This</span>
+        <h3>Turn 11 PM High-Net-Worth Buyers into Booked Walkthroughs</h3>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+          Affluent executives and business owners browse luxury listings late at night from their iPads. Traditional web contact forms leak 65% of buyer intent. Our 24/7 AI Concierge engages them in real-time and routes verified buyers straight to your WhatsApp.
+        </p>
+        <button class="btn btn-gold" onclick="toggleChat()">
+          <i class="fas fa-comments"></i> Test Live AI Conversation
+        </button>
+      </div>
+
+      <div>
+        <ul class="roi-list">
+          <li><i class="fas fa-check-circle"></i> <span><strong>Instant 24/7 Qualification:</strong> AI answers floorplan questions and pre-qualifies buyer budget before pinging your phone.</span></li>
+          <li><i class="fas fa-check-circle"></i> <span><strong>Direct WhatsApp Hand-Off:</strong> Qualified walkthrough requests arrive directly to <strong>+91 96438 10087</strong>.</span></li>
+          <li><i class="fas fa-check-circle"></i> <span><strong>No App Installs Required:</strong> Operates natively in any mobile browser with ultra-fast sub-second loading.</span></li>
+          <li><i class="fas fa-check-circle"></i> <span><strong>Built Exclusively for Golf Course Rd:</strong> Programmed with hyper-local knowledge of Camellias, Magnolias, Aralias, and Belvoir.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Floating AI Concierge Button -->
+  <div class="ai-bubble-btn" onclick="toggleChat()">
+    <span class="pulse-dot"></span>
+    <span>✨ Wealthway AI Concierge</span>
+  </div>
+
+  <!-- Chat Drawer -->
+  <div class="chat-drawer" id="chatDrawer">
+    <div class="chat-header">
+      <div>
+        <div class="chat-header-title">Wealthway Sales Concierge</div>
+        <div class="chat-header-sub">Online • Direct Line to Shobhit Sharma</div>
+      </div>
+      <button onclick="toggleChat()" style="background: none; border: none; color: #9aa0a6; font-size: 18px; cursor: pointer;">&times;</button>
+    </div>
+
+    <div class="chat-messages" id="chatMsgs">
+      <div class="msg msg-bot">
+        Welcome to Wealthway Luxury Realty. I am your 24/7 Luxury Sales Concierge representing Shobhit Sharma. Are you exploring 4-5 BHK luxury residences or sky villas along Golf Course Road today?
+      </div>
+    </div>
+
+    <div class="quick-chips">
+      <div class="chip" onclick="sendQuickPrompt('What is the price of The Camellias 5 BHK?')">Camellias 5 BHK Price</div>
+      <div class="chip" onclick="sendQuickPrompt('Tell me about The Magnolias Penthouse')">Magnolias Sky Villa</div>
+      <div class="chip" onclick="sendQuickPrompt('I want to book a private site visit tomorrow')">Book Private Visit</div>
+      <div class="chip" onclick="sendQuickPrompt('Can I speak with Shobhit Sharma directly?')">Talk to Shobhit</div>
+    </div>
+
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" class="chat-input" placeholder="Ask about listings, prices, floor plans..." onkeypress="handleChatEnter(event)">
+      <button class="chat-send-btn" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
+  <!-- Walkthrough Booking Modal -->
+  <div class="modal-backdrop" id="walkthroughModal" onclick="handleBackdrop(event)">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h3 class="modal-title">Schedule VIP Walkthrough</h3>
+          <div class="modal-sub">Direct confidential booking with Shobhit Sharma.</div>
+        </div>
+        <button onclick="closeWalkthroughModal()" style="background: none; border: none; color: #9aa0a6; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+
+      <form onsubmit="submitWalkthrough(event)">
+        <div class="form-group">
+          <label>Target Residence</label>
+          <input type="text" id="wtProperty" class="form-input" readonly value="The Camellias (₹28.5 Cr)">
+        </div>
+        <div class="form-group">
+          <label>Your Name / Title</label>
+          <input type="text" id="wtName" class="form-input" required placeholder="e.g. Vikram Singhania">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp Number</label>
+          <input type="tel" id="wtPhone" class="form-input" required placeholder="+91 98765 43210">
+        </div>
+        <div class="form-group">
+          <label>Preferred Visit Date & Time</label>
+          <input type="text" id="wtDate" class="form-input" placeholder="e.g. Tomorrow at 4:30 PM">
+        </div>
+
+        <button type="submit" class="btn btn-gold" style="width: 100%; justify-content: center; margin-top: 10px; padding: 12px;">
+          <i class="fab fa-whatsapp"></i> Confirm & Open Shobhit's WhatsApp
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div style="font-family: var(--font-serif); font-size: 18px; color: #fff; margin-bottom: 8px;">
+      WEALTHWAY LUXURY REALTY
+    </div>
+    <p style="margin-bottom: 12px;">
+      Shobhit Sharma • Luxury Advisor • Phone: +91 96438 10087 • Email: shobhit@wealthwayluxury.com
+    </p>
+    <p style="font-size: 11px; color: #6b7280;">
+      Interactive Prototype created to showcase 24/7 AI lead capture for ultra-luxury Gurugram real estate.
+    </p>
+  </footer>
+
+  <script>
+    let chatHistory = [];
+
+    function toggleChat() {
+      const drawer = document.getElementById('chatDrawer');
+      drawer.classList.toggle('open');
+      if (drawer.classList.contains('open')) {
+        document.getElementById('chatInput').focus();
+      }
+    }
+
+    function askAiAboutProperty(name) {
+      toggleChat();
+      sendQuickPrompt(`Please share the key luxury specifications, view orientation, and pricing for ${name}.`);
+    }
+
+    function sendQuickPrompt(text) {
+      document.getElementById('chatInput').value = text;
+      sendChatMessage();
+    }
+
+    function handleChatEnter(e) {
+      if (e.key === 'Enter') sendChatMessage();
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const msgs = document.getElementById('chatMsgs');
+      // Append user msg
+      const userDiv = document.createElement('div');
+      userDiv.className = 'msg msg-user';
+      userDiv.innerText = text;
+      msgs.appendChild(userDiv);
+
+      chatHistory.push({ role: 'user', content: text });
+      input.value = '';
+      msgs.scrollTop = msgs.scrollHeight;
+
+      // Bot loading indicator
+      const botDiv = document.createElement('div');
+      botDiv.className = 'msg msg-bot';
+      botDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking luxury inventory...';
+      msgs.appendChild(botDiv);
+      msgs.scrollTop = msgs.scrollHeight;
+
+      try {
+        const res = await fetch('/api/wealthway/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, history: chatHistory })
+        });
+        const data = await res.json();
+        const reply = data.reply || "Our residences along Golf Course Road range from ₹19 Cr to ₹36 Cr. Shobhit Sharma (+91 96438 10087) can personally arrange your private viewing.";
+        botDiv.innerText = reply;
+        chatHistory.push({ role: 'assistant', content: reply });
+      } catch (err) {
+        botDiv.innerText = "The Camellias and Magnolias feature private elevator lobbies and signature golf views. Would you like to schedule a confidential private walkthrough with Shobhit Sharma (+91 96438 10087)?";
+      }
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function openWalkthroughModal(propName) {
+      document.getElementById('wtProperty').value = propName;
+      document.getElementById('walkthroughModal').classList.add('open');
+    }
+
+    function closeWalkthroughModal() {
+      document.getElementById('walkthroughModal').classList.remove('open');
+    }
+
+    function handleBackdrop(e) {
+      if (e.target.id === 'walkthroughModal') closeWalkthroughModal();
+    }
+
+    function submitWalkthrough(e) {
+      e.preventDefault();
+      const prop = document.getElementById('wtProperty').value;
+      const name = document.getElementById('wtName').value.trim();
+      const phone = document.getElementById('wtPhone').value.trim();
+      const date = document.getElementById('wtDate').value.trim() || 'This week';
+
+      const waMsg = `Hi Shobhit! I am interested in scheduling a private VIP walkthrough for *${prop}*.\n\n👤 Name: ${name}\n📞 WhatsApp: ${phone}\n🗓️ Preferred Time: ${date}\n\nInquiry routed via Wealthway 24/7 AI Concierge.`;
+      const waUrl = `https://wa.me/919643810087?text=${encodeURIComponent(waMsg)}`;
+      
+      closeWalkthroughModal();
+      window.open(waUrl, '_blank');
+    }
+  </script>
+</body>
+</html>

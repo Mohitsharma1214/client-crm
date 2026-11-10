@@ -71,6 +71,59 @@ async def homepage(request):
             return HTMLResponse(f.read())
     return HTMLResponse("<h1>Client Acquisition & AI Demo Hub</h1>")
 
+async def wealthway_preview_page(request):
+    html_path = os.path.join(os.path.dirname(__file__), "static", "wealthway.html")
+    if os.path.exists(html_path):
+        with open(html_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+    return HTMLResponse("<h1>Wealthway Luxury Realty • Interactive Preview</h1>")
+
+async def wealthway_chat(request):
+    """AI Luxury Sales Concierge for Wealthway Luxury Realty using Groq Qwen."""
+    data = await request.json()
+    user_msg = data.get("message", "").strip()
+    history = data.get("history", [])
+
+    system_prompt = """You are the Senior AI Luxury Sales Concierge for Wealthway Luxury Realty, Gurugram.
+You represent Shobhit Sharma (Founder & Luxury Real Estate Advisor, Phone: +91 9643810087).
+Wealthway specializes exclusively in ultra-luxury properties along Golf Course Road, DLF Phase 5, and Central Park corridors in Gurugram (₹15 Cr to ₹45 Cr+).
+
+Key listings in your portfolio:
+1. The Camellias Reserve Residence: ₹28.5 Cr, 7,400 sq.ft, 5 BHK Sky Villa, private elevator lobby, direct golf course views.
+2. The Magnolias Signature Sky Villa: ₹36.0 Cr, 9,800 sq.ft, duplex penthouse, private temperature-controlled plunge pool, 360° Aravalli skyline.
+3. DLF The Aralias Sunset Suite: ₹19.75 Cr, 5,850 sq.ft, 4 BHK high-floor residence, designer furnished.
+
+Guidelines:
+- Tone: Highly polished, discreet, sophisticated, concierge-style.
+- Keep answers concise (under 50 words).
+- If the buyer asks about prices, floorplans, or site visits, provide the luxury specs and smoothly invite them to schedule a private walkthrough with Shobhit Sharma.
+- Mention that Shobhit Sharma (+91 96438 10087) personally facilitates private gate passes and confidential viewings."""
+
+    messages = [{"role": "system", "content": system_prompt}]
+    for h in history[-4:]:
+        messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+    messages.append({"role": "user", "content": user_msg})
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+                json={
+                    "model": "qwen/qwen3.8-27b",
+                    "messages": messages,
+                    "temperature": 0.4,
+                    "max_tokens": 150
+                }
+            )
+            reply = res.json()["choices"][0]["message"]["content"].strip()
+            return JSONResponse({"status": "success", "reply": reply})
+    except Exception as e:
+        return JSONResponse({
+            "status": "success",
+            "reply": "Thank you for inquiring. Our signature residences at The Camellias & The Magnolias range from ₹19 Cr to ₹36 Cr+. Shobhit Sharma (+91 96438 10087) can personally arrange your private walkthrough. Would you like to schedule a confidential private viewing?"
+        })
+
 async def chat_demo(request):
     """Simulates real-time AI customer conversation for target niche."""
     data = await request.json()
@@ -1055,6 +1108,9 @@ static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 routes = [
     Route("/", homepage),
     Route("/demo", demo_page),
+    Route("/wealthway", wealthway_preview_page),
+    Route("/preview/wealthway", wealthway_preview_page),
+    Route("/api/wealthway/chat", wealthway_chat, methods=["POST"]),
     Route("/static/client-crm-react.zip", download_react_zip, methods=["GET"]),
     Route("/static/voice-ai-crm-react.zip", download_react_zip, methods=["GET"]),
     Route("/api/chat", chat_demo, methods=["POST"]),
